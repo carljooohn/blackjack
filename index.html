@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a1f12">
+  <title>Royal Blackjack — Vegas Style</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loading-inner">
+      <div class="loading-cards">
+        <div class="load-card lc1">♠</div>
+        <div class="load-card lc2">♥</div>
+        <div class="load-card lc3">♦</div>
+        <div class="load-card lc4">♣</div>
+      </div>
+      <div class="loading-title">ROYAL BLACKJACK</div>
+      <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+      <div class="loading-sub">Shuffling the deck…</div>
+    </div>
+  </div>
+
+  <!-- Particles canvas -->
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <!-- Neon ambient lights -->
+  <div class="ambient-lights" aria-hidden="true">
+    <div class="amb amb-1"></div>
+    <div class="amb amb-2"></div>
+    <div class="amb amb-3"></div>
+  </div>
+
+  <!-- ══════════ MAIN APP ══════════ -->
+  <div id="app" class="hidden">
+
+    <!-- Top HUD -->
+    <header class="hud">
+      <div class="hud-brand">
+        <span class="brand-suit">♠</span>
+        <span class="brand-name">ROYAL BJ</span>
+        <span class="brand-suit">♠</span>
+      </div>
+      <div class="hud-stats">
+        <div class="hud-stat">
+          <span class="hs-label">Wins</span>
+          <span class="hs-val" id="stat-wins">0</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hs-label">Losses</span>
+          <span class="hs-val" id="stat-losses">0</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hs-label">Streak</span>
+          <span class="hs-val" id="stat-streak">—</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hs-label">Best Win</span>
+          <span class="hs-val" id="stat-best">$0</span>
+        </div>
+        <div class="hud-stat">
+          <span class="hs-label">Profit</span>
+          <span class="hs-val" id="stat-profit">$0</span>
+        </div>
+      </div>
+      <div class="hud-right">
+        <button class="icon-btn" id="btn-mute" title="Toggle Sound" aria-label="Mute">🔊</button>
+        <button class="icon-btn" id="btn-rules" title="Rules" aria-label="Rules">?</button>
+      </div>
+    </header>
+
+    <!-- Casino Table -->
+    <main class="casino-wrap">
+      <div class="table-felt">
+
+        <!-- Deck indicator -->
+        <div class="deck-indicator" id="deck-indicator">
+          <div class="deck-stack">
+            <div class="ds ds5"></div>
+            <div class="ds ds4"></div>
+            <div class="ds ds3"></div>
+            <div class="ds ds2"></div>
+            <div class="ds ds1"></div>
+          </div>
+          <span class="deck-label" id="deck-label">52 cards</span>
+        </div>
+
+        <!-- ── DEALER AREA ── -->
+        <section class="hand-zone dealer-zone" id="dealer-zone">
+          <div class="zone-label">
+            <span>DEALER</span>
+            <div class="score-pill" id="dealer-score">?</div>
+          </div>
+          <div class="cards-row" id="dealer-cards"></div>
+        </section>
+
+        <!-- ── STATUS MESSAGE ── -->
+        <div class="status-area">
+          <div class="status-msg" id="status-msg"></div>
+          <div class="status-sub" id="status-sub"></div>
+        </div>
+
+        <!-- ── INSURANCE PROMPT ── -->
+        <div class="insurance-prompt hidden" id="insurance-prompt">
+          <div class="ins-text">Dealer shows Ace — Take Insurance?</div>
+          <div class="ins-btns">
+            <button class="btn btn-ins-yes" id="btn-ins-yes">Yes ($<span id="ins-amount">0</span>)</button>
+            <button class="btn btn-ins-no"  id="btn-ins-no">No Thanks</button>
+          </div>
+        </div>
+
+        <!-- ── PLAYER AREA (supports split) ── -->
+        <section class="player-section" id="player-section">
+          <!-- Hand 0 -->
+          <div class="hand-zone player-zone active-hand" id="hand-zone-0">
+            <div class="cards-row" id="player-cards-0"></div>
+            <div class="zone-label bottom-label">
+              <span>PLAYER</span>
+              <div class="score-pill" id="player-score-0">0</div>
+            </div>
+            <div class="hand-bet-indicator" id="hand-bet-0"></div>
+          </div>
+          <!-- Hand 1 (split) -->
+          <div class="hand-zone player-zone hidden" id="hand-zone-1">
+            <div class="cards-row" id="player-cards-1"></div>
+            <div class="zone-label bottom-label">
+              <span>SPLIT HAND</span>
+              <div class="score-pill" id="player-score-1">0</div>
+            </div>
+            <div class="hand-bet-indicator" id="hand-bet-1"></div>
+          </div>
+        </section>
+
+        <!-- ── BET POT ── -->
+        <div class="bet-pot-area">
+          <div class="pot-display" id="pot-display">
+            <div class="pot-chips-visual" id="pot-chips-visual"></div>
+            <div class="pot-label">BET</div>
+            <div class="pot-amount" id="pot-amount">$0</div>
+          </div>
+          <div class="balance-display">
+            <div class="bal-label">BALANCE</div>
+            <div class="bal-amount" id="bal-amount">$1,000</div>
+          </div>
+        </div>
+
+        <!-- ── CHIP TRAY ── -->
+        <div class="chip-tray" id="chip-tray">
+          <div class="chip chip-5"   data-val="5"   onclick="placeBet(5)">$5</div>
+          <div class="chip chip-10"  data-val="10"  onclick="placeBet(10)">$10</div>
+          <div class="chip chip-25"  data-val="25"  onclick="placeBet(25)">$25</div>
+          <div class="chip chip-50"  data-val="50"  onclick="placeBet(50)">$50</div>
+          <div class="chip chip-100" data-val="100" onclick="placeBet(100)">$100</div>
+          <div class="chip chip-500" data-val="500" onclick="placeBet(500)">$500</div>
+        </div>
+
+        <!-- ── ACTION CONTROLS ── -->
+        <div class="controls" id="controls">
+          <button class="btn btn-clear" id="btn-clear"  onclick="clearBet()"      disabled>Clear</button>
+          <button class="btn btn-deal"  id="btn-deal"   onclick="startGame()"     disabled>Deal</button>
+          <button class="btn btn-hit"   id="btn-hit"    onclick="playerHit()"     disabled>Hit <kbd>H</kbd></button>
+          <button class="btn btn-stand" id="btn-stand"  onclick="playerStand()"   disabled>Stand <kbd>S</kbd></button>
+          <button class="btn btn-dbl"   id="btn-dbl"    onclick="playerDouble()"  disabled>Double <kbd>D</kbd></button>
+          <button class="btn btn-split" id="btn-split"  onclick="playerSplit()"   disabled>Split <kbd>P</kbd></button>
+          <button class="btn btn-next"  id="btn-next"   onclick="nextHand()"      disabled>Next Hand →</button>
+          <button class="btn btn-new"   id="btn-new"    onclick="resetHand()"     disabled>New Hand</button>
+        </div>
+
+        <!-- ── GAME LOG ── -->
+        <div class="game-log" id="game-log">
+          <div class="log-inner" id="log-inner">
+            <p class="log-entry">Welcome to Royal Blackjack. Place your bet to begin.</p>
+          </div>
+        </div>
+
+      </div><!-- .table-felt -->
+    </main>
+
+  </div><!-- #app -->
+
+  <!-- Rules Modal -->
+  <div class="modal-overlay hidden" id="rules-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close">✕</button>
+      <h2 class="modal-title">How to Play</h2>
+      <div class="rules-grid">
+        <div class="rule-item"><span class="rule-icon">🃏</span><strong>Blackjack</strong> pays 3:2</div>
+        <div class="rule-item"><span class="rule-icon">🛑</span><strong>Dealer</strong> stands on 17</div>
+        <div class="rule-item"><span class="rule-icon">⚡</span><strong>Double Down</strong> on first 2 cards</div>
+        <div class="rule-item"><span class="rule-icon">✂️</span><strong>Split</strong> matching rank cards</div>
+        <div class="rule-item"><span class="rule-icon">🛡️</span><strong>Insurance</strong> when dealer shows Ace</div>
+        <div class="rule-item"><span class="rule-icon">🤝</span><strong>Push</strong> returns your bet</div>
+      </div>
+      <div class="keyboard-hint">
+        <strong>Keyboard:</strong> H = Hit · S = Stand · D = Double · P = Split
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
