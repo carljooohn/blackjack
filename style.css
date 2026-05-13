@@ -813,13 +813,29 @@ body {
   100% { transform: scale(1); }
 }
 
+/* ── Bet Utility Row ────────────────────────────────────────── */
+.bet-utils {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
+
 .btn-deal  { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dk) 100%); color: #0d1a06; box-shadow: 0 4px 20px rgba(212,168,67,.35); font-size: .9rem; padding: 11px 26px; }
 .btn-deal:hover:not(:disabled)  { box-shadow: 0 6px 32px rgba(212,168,67,.65); }
 .btn-hit   { background: linear-gradient(135deg, #27ae60, #145c30); color: #fff; box-shadow: 0 4px 16px rgba(39,174,96,.3); }
 .btn-stand { background: linear-gradient(135deg, #c0392b, #7d1212); color: #fff; box-shadow: 0 4px 16px rgba(192,57,43,.3); }
 .btn-dbl   { background: linear-gradient(135deg, #e67e22, #8f4b0a); color: #fff; box-shadow: 0 4px 16px rgba(230,126,34,.3); }
 .btn-split { background: linear-gradient(135deg, #8e44ad, #4a1572); color: #fff; box-shadow: 0 4px 16px rgba(142,68,173,.3); }
-.btn-clear { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: var(--cream); }
+.btn-clear { background: rgba(255,255,255,.08); border: 1px solid rgba(255,80,80,.3); color: #f87171; }
+.btn-clear:hover:not(:disabled) { background: rgba(248,113,113,.12); border-color: rgba(248,113,113,.55); }
+.btn-redo  { background: rgba(255,255,255,.08); border: 1px solid rgba(212,168,67,.35); color: var(--gold-lt); }
+.btn-redo:hover:not(:disabled)  { background: rgba(212,168,67,.14); border-color: var(--gold); box-shadow: 0 0 12px rgba(212,168,67,.3); }
+.btn-maxbet { background: linear-gradient(135deg, #c0392b, #7d1212); color: #fff; box-shadow: 0 4px 16px rgba(192,57,43,.3); }
+.btn-maxbet:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(192,57,43,.6); }
+.btn-reset-bal { background: transparent; border: 1px solid rgba(255,255,255,.12); color: rgba(245,237,214,.35); font-size: .7rem; padding: 8px 14px; }
+.btn-reset-bal:hover { border-color: rgba(255,255,255,.3); color: rgba(245,237,214,.65); }
 .btn-next  { background: linear-gradient(135deg, #16a085, #0d5c4a); color: #fff; box-shadow: 0 4px 16px rgba(22,160,133,.3); }
 .btn-new   { background: rgba(255,255,255,.08); border: 1px solid rgba(212,168,67,.3); color: var(--gold-lt); }
 .btn-ins-yes { background: linear-gradient(135deg, var(--gold), var(--gold-dk)); color: #0d1a06; font-size: .78rem; padding: 8px 18px; }
@@ -1015,6 +1031,8 @@ body {
   .chip { width: 44px; height: 44px; font-size: .55rem; }
   .chip-tray { gap: 6px; }
 
+  .bet-utils { gap: 6px; }
+  .btn-redo, .btn-maxbet, .btn-clear, .btn-reset-bal { font-size: .68rem; padding: 8px 12px; }
   .btn { font-size: .72rem; padding: 9px 14px; min-height: 38px; }
   .btn kbd { display: none; }
   .btn-deal { padding: 10px 20px; font-size: .82rem; }

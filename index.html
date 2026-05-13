@@ -159,9 +159,16 @@
           <div class="chip chip-500" data-val="500" onclick="placeBet(500)">$500</div>
         </div>
 
+        <!-- ── BET UTILITY BUTTONS ── -->
+        <div class="bet-utils" id="bet-utils">
+          <button class="btn btn-clear"   id="btn-clear"   onclick="clearBet()"   disabled>✕ Clear</button>
+          <button class="btn btn-redo"    id="btn-redo"    onclick="redoBet()"    disabled>↺ Redo Bet</button>
+          <button class="btn btn-maxbet"  id="btn-maxbet"  onclick="maxBet()"     disabled>⚡ Max Bet</button>
+          <button class="btn btn-reset-bal" id="btn-reset-bal" onclick="confirmResetBalance()">↺ Reset $</button>
+        </div>
+
         <!-- ── ACTION CONTROLS ── -->
         <div class="controls" id="controls">
-          <button class="btn btn-clear" id="btn-clear"  onclick="clearBet()"      disabled>Clear</button>
           <button class="btn btn-deal"  id="btn-deal"   onclick="startGame()"     disabled>Deal</button>
           <button class="btn btn-hit"   id="btn-hit"    onclick="playerHit()"     disabled>Hit <kbd>H</kbd></button>
           <button class="btn btn-stand" id="btn-stand"  onclick="playerStand()"   disabled>Stand <kbd>S</kbd></button>

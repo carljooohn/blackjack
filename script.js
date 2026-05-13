@@ -12,7 +12,7 @@ const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const RED_SUITS = new Set(['♥','♦']);
 const STARTING_BALANCE = 1000;
 const MIN_BET = 5;
-const MAX_BET = 1000;
+// No hard MAX_BET — player can bet up to their full balance
 const RESHUFFLE_AT = 20;
 
 /* ── Sound stubs (pluggable) ──────────────────────────────────── */
@@ -60,6 +60,8 @@ let firstMove = true;            // For double-down restriction
 let balance = STARTING_BALANCE;
 let currentBet = 0;
 let betChips = [];               // Track chip denominations for visual
+let previousBet = 0;             // Last completed hand bet (for Redo Bet)
+let previousBetChips = [];       // Chip breakdown of previous bet
 
 let stats = {
   wins: 0, losses: 0, streak: 0,
@@ -95,6 +97,9 @@ const els = {
   btnDbl: $('btn-dbl'),
   btnSplit: $('btn-split'),
   btnClear: $('btn-clear'),
+  btnRedo: $('btn-redo'),
+  btnMaxbet: $('btn-maxbet'),
+  btnResetBal: $('btn-reset-bal'),
   btnNext: $('btn-next'),
   btnNew: $('btn-new'),
   btnMute: $('btn-mute'),
@@ -375,10 +380,6 @@ function placeBet(amount) {
     flashEl('bal-amount', 'flash-loss');
     return;
   }
-  if (currentBet + amount > MAX_BET) {
-    showStatus('Max bet is $' + MAX_BET, 'push', '');
-    return;
-  }
 
   SFX.init();
   SFX.chip();
@@ -386,7 +387,7 @@ function placeBet(amount) {
   currentBet += amount;
   betChips.push(amount);
   updateBetDisplay();
-  addPotChip(amount);
+  addPotChipForAmount(amount);
 
   // Animate tray chip
   const chip = document.querySelector(`.chip[data-val="${amount}"]`);
@@ -399,6 +400,7 @@ function placeBet(amount) {
 
   els.btnDeal.disabled = false;
   els.btnClear.disabled = false;
+  updateBetUtilButtons();
   updateChipStates();
 }
 
@@ -410,16 +412,161 @@ function clearBet() {
   updateBetDisplay();
   els.btnDeal.disabled = true;
   els.btnClear.disabled = true;
+  updateBetUtilButtons();
   updateChipStates();
 }
 
-function addPotChip(amount) {
-  const colorMap = { 5:'pvc-5', 10:'pvc-10', 25:'pvc-25', 50:'pvc-50', 100:'pvc-100', 500:'pvc-500' };
-  const cl = colorMap[amount] || 'pvc-25';
+/* ── Redo Bet ─────────────────────────────────────────────────── */
+function redoBet() {
+  if (gamePhase !== 'betting') return;
+  if (previousBet <= 0) return;
+  if (previousBet > balance) {
+    flashEl('bal-amount', 'flash-loss');
+    showStatus('Not enough balance to redo bet', 'lose', `Need $${previousBet}, have $${balance}`);
+    setTimeout(clearStatus, 2200);
+    return;
+  }
+
+  // Clear any existing bet first
+  currentBet = 0;
+  betChips = [];
+  els.potChipsVis.innerHTML = '';
+
+  // Re-place previous chips one by one with staggered animations
+  SFX.init();
+  const chips = [...previousBetChips];
+  chips.forEach((amount, i) => {
+    setTimeout(() => {
+      currentBet += amount;
+      betChips.push(amount);
+      addPotChipForAmount(amount);
+      SFX.chip();
+      updateBetDisplay();
+      // Animate matching tray chip if it exists
+      const chip = document.querySelector(`.chip[data-val="${amount}"]`);
+      if (chip) {
+        chip.classList.remove('placing');
+        void chip.offsetWidth;
+        chip.classList.add('placing');
+        chip.addEventListener('animationend', () => chip.classList.remove('placing'), { once: true });
+      }
+      if (i === chips.length - 1) {
+        els.btnDeal.disabled = false;
+        els.btnClear.disabled = false;
+        updateBetUtilButtons();
+        updateChipStates();
+        logEntry(`Redo bet: $${currentBet}`);
+      }
+    }, i * 80);
+  });
+}
+
+/* ── Max Bet ──────────────────────────────────────────────────── */
+function maxBet() {
+  if (gamePhase !== 'betting') return;
+  if (balance <= 0) return;
+
+  // Clear current bet first
+  currentBet = 0;
+  betChips = [];
+  els.potChipsVis.innerHTML = '';
+
+  // Build optimal chip breakdown for the full balance
+  const chipVals = [500, 100, 50, 25, 10, 5];
+  let remaining = balance;
+  const chips = [];
+  for (const val of chipVals) {
+    while (remaining >= val) {
+      chips.push(val);
+      remaining -= val;
+    }
+  }
+  // Any remainder below $5 just gets tacked on as a single chip for visual
+  if (remaining > 0) chips.push(remaining);
+
+  SFX.init();
+
+  // Cap visual chips at 12 to avoid overflow — consolidate the rest into fewer chips
+  const visualChips = consolidateChips(chips, 12);
+
+  visualChips.forEach((amount, i) => {
+    setTimeout(() => {
+      currentBet += amount;
+      betChips.push(amount);
+      addPotChipForAmount(amount);
+      SFX.chip();
+      updateBetDisplay();
+      if (i === visualChips.length - 1) {
+        els.btnDeal.disabled = false;
+        els.btnClear.disabled = false;
+        updateBetUtilButtons();
+        updateChipStates();
+        logEntry(`Max bet: $${currentBet}`);
+      }
+    }, i * 55);
+  });
+}
+
+/**
+ * Consolidate a chip array down to maxCount chips for visual display.
+ * Sums excess chips into the highest denominations.
+ */
+function consolidateChips(chips, maxCount) {
+  if (chips.length <= maxCount) return chips;
+  const total = chips.reduce((a, b) => a + b, 0);
+  const chipVals = [500, 100, 50, 25, 10, 5];
+  const result = [];
+  let remaining = total;
+  for (const val of chipVals) {
+    const count = Math.min(Math.floor(remaining / val), maxCount - result.length - 1);
+    for (let i = 0; i < count; i++) { result.push(val); remaining -= val; }
+    if (result.length >= maxCount - 1) break;
+  }
+  if (remaining > 0) result.push(remaining);
+  return result;
+}
+
+/* ── Update bet utility button states ───────────────────────────── */
+function updateBetUtilButtons() {
+  const isBetting = gamePhase === 'betting';
+  // Redo: available after a hand has been played and balance covers it
+  els.btnRedo.disabled    = !isBetting || previousBet <= 0 || previousBet > balance;
+  // Max Bet: available when betting and balance > 0
+  els.btnMaxbet.disabled  = !isBetting || balance <= 0;
+  // Clear: only when there's a current bet
+  els.btnClear.disabled   = !isBetting || currentBet <= 0;
+}
+
+/* ── Reset Balance ───────────────────────────────────────────────── */
+function confirmResetBalance() {
+  if (!confirm('Reset balance to $1,000 and clear all stats? This cannot be undone.')) return;
+  balance = STARTING_BALANCE;
+  stats = { wins: 0, losses: 0, streak: 0, bestWin: 0, totalProfit: 0 };
+  previousBet = 0;
+  previousBetChips = [];
+  updateBetDisplay();
+  updateStatsDisplay();
+  updateBetUtilButtons();
+  saveState();
+  logEntry('Balance reset to $1,000.');
+}
+
+/* ── addPotChipForAmount: maps arbitrary amounts to nearest colour ── */
+function addPotChipForAmount(amount) {
+  // Map to nearest standard chip colour
+  let cl;
+  if      (amount >= 500) cl = 'pvc-500';
+  else if (amount >= 100) cl = 'pvc-100';
+  else if (amount >= 50)  cl = 'pvc-50';
+  else if (amount >= 25)  cl = 'pvc-25';
+  else if (amount >= 10)  cl = 'pvc-10';
+  else                    cl = 'pvc-5';
+
   const el = document.createElement('div');
   el.className = `pot-chip-vis ${cl}`;
   els.potChipsVis.appendChild(el);
 }
+
 
 function updateBetDisplay() {
   els.potAmount.textContent = '$' + currentBet;
@@ -430,7 +577,7 @@ function updateBetDisplay() {
 function updateChipStates() {
   document.querySelectorAll('.chip[data-val]').forEach(chip => {
     const v = parseInt(chip.dataset.val);
-    chip.classList.toggle('chip-off', gamePhase !== 'betting' || v > balance - currentBet || currentBet + v > MAX_BET);
+    chip.classList.toggle('chip-off', gamePhase !== 'betting' || v > balance - currentBet);
   });
 }
 
@@ -491,6 +638,10 @@ function startGame() {
   hasInsurance = false;
   insuranceBet = 0;
   currentHandIdx = 0;
+
+  // Save this bet as "previous" for Redo Bet
+  previousBet = currentBet;
+  previousBetChips = [...betChips];
 
   // Deduct bet; set up hands
   balance -= currentBet;
@@ -941,6 +1092,7 @@ function resetHand() {
   updateBetDisplay();
   lockBettingControls(false);
   setControls({ deal:false, hit:false, stand:false, dbl:false, split:false, next:false, clear:false, newGame:false });
+  updateBetUtilButtons();
   updateChipStates();
   logEntry('── New hand ──');
   saveState();
@@ -974,15 +1126,20 @@ function setControls({ deal, hit, stand, dbl, split, next, clear, newGame }) {
   els.btnDbl.disabled   = !dbl;
   els.btnSplit.disabled = !split;
   els.btnNext.disabled  = !next;
-  els.btnClear.disabled = !clear;
   els.btnNew.disabled   = !newGame;
+  // bet-util buttons managed separately
+  updateBetUtilButtons();
 }
 
 function lockBettingControls(lock) {
   updateChipStates();
   if (lock) {
     document.querySelectorAll('.chip').forEach(c => c.classList.add('chip-off'));
-    els.btnClear.disabled = true;
+    els.btnClear.disabled  = true;
+    els.btnRedo.disabled   = true;
+    els.btnMaxbet.disabled = true;
+  } else {
+    updateBetUtilButtons();
   }
 }
 
@@ -1043,15 +1200,10 @@ function updateStatsDisplay() {
    ═══════════════════════════════════════════════════════════════ */
 function checkBalance() {
   if (balance <= 0) {
+    balance = 0;
+    updateBetDisplay();
     setTimeout(() => {
-      showStatus('Broke! Reloading wallet…', 'lose', '');
-      setTimeout(() => {
-        balance = STARTING_BALANCE;
-        stats.totalProfit = 0;
-        updateBetDisplay();
-        updateStatsDisplay();
-        logEntry('Balance reset to $1000.');
-      }, 2000);
+      showStatus('Out of chips!', 'lose', 'Press "Reset $" to reload your balance');
     }, 600);
   }
 }
@@ -1128,15 +1280,21 @@ function saveState() {
   try {
     localStorage.setItem('rjbj_balance', balance);
     localStorage.setItem('rjbj_stats', JSON.stringify(stats));
+    localStorage.setItem('rjbj_prev_bet', previousBet);
+    localStorage.setItem('rjbj_prev_bet_chips', JSON.stringify(previousBetChips));
   } catch(e) {}
 }
 
 function loadState() {
   try {
     const b = localStorage.getItem('rjbj_balance');
-    if (b !== null) balance = Math.max(MIN_BET, parseInt(b) || STARTING_BALANCE);
+    if (b !== null) balance = Math.max(0, parseInt(b) || STARTING_BALANCE);
     const s = localStorage.getItem('rjbj_stats');
     if (s) Object.assign(stats, JSON.parse(s));
+    const pb = localStorage.getItem('rjbj_prev_bet');
+    if (pb !== null) previousBet = parseInt(pb) || 0;
+    const pbc = localStorage.getItem('rjbj_prev_bet_chips');
+    if (pbc) previousBetChips = JSON.parse(pbc) || [];
   } catch(e) {}
 }
 
@@ -1199,6 +1357,7 @@ function init() {
   updateBetDisplay();
   updateStatsDisplay();
   updateDeckLabel();
+  updateBetUtilButtons();
   attachButtonRipples();
   attachKeyboard();
   attachUI();
@@ -1207,7 +1366,7 @@ function init() {
   // Autosave every 30s
   setInterval(saveState, 30000);
 
-  logEntry('Royal Blackjack ready. Min bet $5 · Max bet $1000.');
+  logEntry('Royal Blackjack ready. Min bet $5 · Max bet = your balance.');
 }
 
 /* ── Boot ──────────────────────────────────────────────────────── */
