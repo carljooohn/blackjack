@@ -1,8 +1,8 @@
-# 🎰 Royal Blackjack — Vegas Style
+# 🎰 Royal Blackjack
 
 A premium casino-style Blackjack game built with **HTML, CSS, and JavaScript**.
 
-Features realistic Vegas visuals, smooth animations, betting chips, split hands, double down, insurance, responsive mobile support, keyboard shortcuts, and modern casino UI effects.
+Features realistic visuals, smooth animations, betting chips, split hands, double down, insurance, responsive mobile support, keyboard shortcuts, and modern casino UI effects.
 
 ---
 
