@@ -156,14 +156,27 @@
           <!-- Centre: chip selector + pot -->
           <div class="bet-centre">
 
-            <!-- Bet pot — stacked chips + amount -->
-            <div class="bet-pot" id="pot-display">
-              <div class="pot-stack-area">
-                <div class="chip-tower" id="pot-chips-visual"></div>
-              </div>
-              <div class="pot-info">
-                <span class="pot-label">BET</span>
-                <span class="pot-amount" id="pot-amount">$0</span>
+            <!-- Bet chip — single full-face casino chip showing bet total -->
+            <div class="bet-chip-wrap" id="pot-display">
+              <div class="bet-chip empty" id="bet-chip-face">
+                <!-- Outer decorative ring -->
+                <div class="bc-outer-ring"></div>
+                <!-- Edge notch segments -->
+                <div class="bc-notches">
+                  <span class="bc-notch"></span><span class="bc-notch"></span>
+                  <span class="bc-notch"></span><span class="bc-notch"></span>
+                  <span class="bc-notch"></span><span class="bc-notch"></span>
+                  <span class="bc-notch"></span><span class="bc-notch"></span>
+                </div>
+                <!-- Inner white circle -->
+                <div class="bc-inner-ring"></div>
+                <!-- Centre label — shows bet amount -->
+                <div class="bc-center">
+                  <span class="bc-amount" id="pot-amount">$0</span>
+                  <span class="bc-label">BET</span>
+                </div>
+                <!-- Gloss highlight -->
+                <div class="bc-gloss"></div>
               </div>
             </div>
 
@@ -177,18 +190,23 @@
             <div class="chip-tray" id="chip-tray">
               <div class="chip chip-50"  data-val="50"    onclick="placeBet(50)">
                 <span class="chip-value">$50</span>
+                <span class="chip-gloss"></span>
               </div>
               <div class="chip chip-100" data-val="100"   onclick="placeBet(100)">
                 <span class="chip-value">$100</span>
+                <span class="chip-gloss"></span>
               </div>
               <div class="chip chip-500" data-val="500"   onclick="placeBet(500)">
                 <span class="chip-value">$500</span>
+                <span class="chip-gloss"></span>
               </div>
               <div class="chip chip-1k"  data-val="1000"  onclick="placeBet(1000)">
                 <span class="chip-value">$1K</span>
+                <span class="chip-gloss"></span>
               </div>
               <div class="chip chip-10k" data-val="10000" onclick="placeBet(10000)">
                 <span class="chip-value">$10K</span>
+                <span class="chip-gloss"></span>
               </div>
             </div>
 

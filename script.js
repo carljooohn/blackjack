@@ -503,7 +503,7 @@ function placeBet(amount) {
 function clearBet() {
   if (gamePhase !== 'betting') return;
   currentBet = 0; betChips = [];
-  el.potChipsVis.innerHTML = '';
+  renderStack();
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('chip-selected'));
   updateBetDisplay();
   setVisible(el.btnDeal, false);
@@ -513,7 +513,7 @@ function clearBet() {
 function redoBet() {
   if (gamePhase!=='betting'||previousBet<=0) return;
   if (previousBet+totalSideBet()>balance) { flashEl('bal-amount','flash-loss'); return; }
-  currentBet=0; betChips=[]; el.potChipsVis.innerHTML='';
+  currentBet=0; betChips=[]; renderStack();
   SFX.init();
   [...previousBetChips].forEach((amt,i)=>{
     setTimeout(()=>{
@@ -532,7 +532,7 @@ function maxBet() {
   if (gamePhase!=='betting'||balance<=0) return;
   const avail = balance - totalSideBet();
   if (avail<=0) return;
-  currentBet=0; betChips=[]; el.potChipsVis.innerHTML='';
+  currentBet=0; betChips=[]; renderStack();
 
   const denoms=[500,100,50,25,10,5];
   let rem=avail; const chips=[];
@@ -577,21 +577,86 @@ function consolidateChips(chips, max) {
 }
 
 function chipColour(amt) {
-  if(amt>=500) return 'pvc-500'; if(amt>=100) return 'pvc-100';
-  if(amt>=50)  return 'pvc-50';  if(amt>=25)  return 'pvc-25';
-  if(amt>=10)  return 'pvc-10';  return 'pvc-5';
+  if (amt >= 10000) return 'pvc-10k';
+  if (amt >= 1000)  return 'pvc-1k';
+  if (amt >= 500)   return 'pvc-500';
+  if (amt >= 100)   return 'pvc-100';
+  if (amt >= 50)    return 'pvc-50';
+  if (amt >= 25)    return 'pvc-25';
+  if (amt >= 10)    return 'pvc-10';
+  return 'pvc-5';
 }
+
+/* Map bet total → chip colour class for the face-up chip */
+function betChipClass(total) {
+  if (total >= 10000) return 'bc-10k';
+  if (total >= 1000)  return 'bc-1k';
+  if (total >= 500)   return 'bc-500';
+  if (total >= 100)   return 'bc-100';
+  return 'bc-50';
+}
+
+/* Legacy stub — renderStack now handles everything */
 function addPotChipVis(amount) {
-  const d = document.createElement('div');
-  d.className = `pot-chip-vis ${chipColour(amount)}`;
-  // Insert at the END so new chips appear on top (column-reverse layout)
-  el.potChipsVis.appendChild(d);
+  renderStack();
+}
+
+/* ── renderStack ────────────────────────────────────────────────────────────
+   Drives the single full-face bet chip that shows the total bet amount.
+   Changes colour to match the highest denomination in the bet.
+   ─────────────────────────────────────────────────────────────────────────*/
+function renderStack() {
+  const face = document.getElementById('bet-chip-face');
+  if (!face) return;
+
+  const total = currentBet;
+
+  if (!total || !betChips.length) {
+    // Empty — reset to placeholder state
+    face.className = 'bet-chip empty';
+    const amtEl = face.querySelector('.bc-amount');
+    if (amtEl) { amtEl.textContent = '$0'; amtEl.className = 'bc-amount'; }
+    return;
+  }
+
+  // Determine chip colour from highest-value chip placed
+  const topChip = betChips.reduce((a, b) => Math.max(a, b), 0);
+  const colClass = betChipClass(topChip);
+
+  const wasEmpty = face.classList.contains('empty');
+  const prevClass = Array.from(face.classList).find(c => c.startsWith('bc-') && c !== 'bc-amount');
+
+  // Update colour class
+  face.className = `bet-chip active ${colClass}`;
+
+  // Animate: pop if colour changed or was empty
+  if (wasEmpty || prevClass !== colClass) {
+    void face.offsetWidth; // reflow to restart animation
+    face.classList.add('pulse');
+    face.addEventListener('animationend', () => face.classList.remove('pulse'), { once: true });
+  }
+
+  // Update centre amount label
+  const amtEl = face.querySelector('.bc-amount');
+  if (amtEl) {
+    const formatted = total >= 10000 ? '$' + (total/1000).toFixed(total % 1000 === 0 ? 0 : 1) + 'K'
+                    : total >= 1000  ? '$' + (total/1000).toFixed(total % 1000 === 0 ? 0 : 1) + 'K'
+                    : '$' + total;
+    amtEl.textContent = formatted;
+    // Scale font for long strings
+    amtEl.className = 'bc-amount' + (formatted.length > 5 ? ' small' : '') + (formatted.length > 7 ? ' xsmall' : '');
+  }
 }
 
 function updateBetDisplay() {
-  el.potAmount.textContent='$'+currentBet;
-  el.potAmount.classList.toggle('has-bet',currentBet>0);
-  el.balAmount.textContent='$'+balance.toLocaleString();
+  // Keep the hidden #pot-amount element updated (used by some logic checks)
+  if (el.potAmount) {
+    el.potAmount.textContent = '$' + currentBet;
+    el.potAmount.classList.toggle('has-bet', currentBet > 0);
+  }
+  el.balAmount.textContent = '$' + balance.toLocaleString();
+  // Sync the visual chip face
+  renderStack();
 }
 
 function updateChipStates() {
@@ -896,20 +961,16 @@ function endRound(results) {
     });
   });
 
-  const potChips = el.potChipsVis.querySelectorAll('.pot-chip-vis');
+  const betFace = document.getElementById('bet-chip-face');
   const isWin = results.some(r => r.outcome==='win' || r.outcome==='blackjack');
-  potChips.forEach((c, i) => {
-    const delay = i * 40;
-    c.style.transition = `transform .4s ${delay}ms cubic-bezier(.34,1.56,.64,1), opacity .35s ${delay}ms ease`;
-    if (isWin) {
-      c.style.transform = 'translateY(-18px) scale(1.35)';
-      c.style.filter    = 'brightness(1.6)';
-    } else {
-      c.style.transform = 'translateY(8px) scale(.55)';
-    }
-    c.style.opacity = '0';
-  });
-  setTimeout(() => { el.potChipsVis.innerHTML = ''; }, 650);
+  if (betFace && !betFace.classList.contains('empty')) {
+    betFace.classList.add(isWin ? 'exit-win' : 'exit-lose');
+    betFace.addEventListener('animationend', () => {
+      betFace.className = 'bet-chip empty';
+      const amtEl = betFace.querySelector('.bc-amount');
+      if (amtEl) { amtEl.textContent = '$0'; amtEl.className = 'bc-amount'; }
+    }, { once: true });
+  }
 
   updateBetDisplay(); updateStatsDisplay();
   updateLeaderboard();  // persist updated stats to leaderboard
@@ -937,7 +998,7 @@ function resetHand() {
   el.dealerScore.textContent='?'; el.dealerScore.className='score-pill';
   $('hand-zone-1').classList.add('hidden');
   $('hand-zone-0').classList.remove('active-hand');
-  el.potChipsVis.innerHTML='';
+  renderStack();
   el.insurancePrompt.classList.add('hidden');
 
   refreshSbUI(); lockSideBets(false);

@@ -406,98 +406,218 @@ body {
   gap: 10px;
 }
 
-/* ── Bet Pot ────────────────────────────────────────────── */
-.bet-pot {
+/* ═══════════════════════════════════════════════════════════
+   BET CHIP  — single full-face casino chip in the pot area
+   Matches the reference: round chip, outer ring, edge notches,
+   inner white circle, denomination in centre, gloss arc.
+   ═══════════════════════════════════════════════════════════ */
+
+.bet-chip-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-}
-.pot-stack-area {
-  height: 88px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 72px;
+  gap: 8px;
 }
 
-/* Tower of stacked chip discs */
-.chip-tower {
+/* The chip itself */
+.bet-chip {
   position: relative;
-  width: 64px;
-  display: flex;
-  flex-direction: column-reverse; /* chips stack bottom-up */
-  align-items: center;
-}
-
-.pot-chip-vis {
-  width: 64px;
-  height: 14px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: -4px; /* overlap for stack effect */
-  position: relative;
+  transition:
+    background .35s ease,
+    box-shadow .35s ease,
+    transform .3s cubic-bezier(.34,1.56,.64,1);
+}
 
-  /* Base edge shadow to give 3-D disc look */
+/* ── Empty state — dark placeholder ring ─────────────────── */
+.bet-chip.empty {
+  background: rgba(0,0,0,.28);
   box-shadow:
-    0 3px 6px rgba(0,0,0,.55),
-    inset 0 2px 0 rgba(255,255,255,.28),
-    inset 0 -2px 0 rgba(0,0,0,.45);
-
-  animation: chipStackIn .22s cubic-bezier(.34,1.56,.64,1) both;
+    0 0 0 2px rgba(255,255,255,.07),
+    inset 0 0 0 2px rgba(255,255,255,.05);
 }
-/* Dashed inner ring detail on pot disc */
-.pot-chip-vis::before {
-  content: '';
+.bet-chip.empty .bc-outer-ring { border-color: rgba(255,255,255,.08); }
+.bet-chip.empty .bc-inner-ring { border-color: rgba(255,255,255,.06); background: rgba(255,255,255,.03); }
+.bet-chip.empty .bc-notch      { background: rgba(255,255,255,.06); }
+.bet-chip.empty .bc-amount     { opacity: .25; }
+.bet-chip.empty .bc-label      { opacity: .18; }
+.bet-chip.empty .bc-gloss      { opacity: 0; }
+
+/* ── Active state — chip animates in when bet is placed ────── */
+.bet-chip.active {
+  transform: scale(1);
+  animation: betChipAppear .38s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes betChipAppear {
+  0%   { transform: scale(.55) translateY(-12px); opacity: 0; }
+  60%  { transform: scale(1.08) translateY(2px);  opacity: 1; }
+  100% { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+
+/* Chip pop when new chip added to existing bet */
+.bet-chip.pulse {
+  animation: betChipPulse .28s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes betChipPulse {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.1); filter: brightness(1.25); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* ── Chip colour classes (applied by JS) ────────────────────── */
+/* $50 — sapphire */
+.bet-chip.bc-50 {
+  background: radial-gradient(circle at 38% 32%, #7ecbf5 0%, #2474b0 45%, #0d3d6e 100%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.20), 0 8px 28px rgba(36,100,180,.7), 0 3px 10px rgba(0,0,0,.6), inset 0 4px 0 rgba(255,255,255,.28), inset 0 -3px 0 rgba(0,0,0,.45);
+}
+/* $100 — crimson */
+.bet-chip.bc-100 {
+  background: radial-gradient(circle at 38% 32%, #f08070 0%, #c0311f 45%, #6b1a14 100%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 8px 28px rgba(192,50,30,.7), 0 3px 10px rgba(0,0,0,.6), inset 0 4px 0 rgba(255,255,255,.26), inset 0 -3px 0 rgba(0,0,0,.45);
+}
+/* $500 — emerald */
+.bet-chip.bc-500 {
+  background: radial-gradient(circle at 38% 32%, #70e090 0%, #1a8040 45%, #0a3e22 100%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 8px 28px rgba(26,128,64,.7), 0 3px 10px rgba(0,0,0,.6), inset 0 4px 0 rgba(255,255,255,.26), inset 0 -3px 0 rgba(0,0,0,.45);
+}
+/* $1K — purple */
+.bet-chip.bc-1k {
+  background: radial-gradient(circle at 38% 32%, #c090e0 0%, #7030a0 45%, #3e1a50 100%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.18), 0 8px 28px rgba(112,48,160,.7), 0 3px 10px rgba(0,0,0,.6), inset 0 4px 0 rgba(255,255,255,.26), inset 0 -3px 0 rgba(0,0,0,.45);
+}
+/* $10K — gold */
+.bet-chip.bc-10k {
+  background: radial-gradient(circle at 38% 32%, #fae87a 0%, #c9a84c 45%, #7a5e10 100%);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.28), 0 8px 28px rgba(201,168,76,.8), 0 3px 10px rgba(0,0,0,.5), inset 0 4px 0 rgba(255,255,255,.42), inset 0 -3px 0 rgba(0,0,0,.35);
+}
+
+/* ── Outer decorative ring ────────────────────────────────── */
+.bc-outer-ring {
   position: absolute;
-  inset: 2px 6px;
+  inset: 5px;
   border-radius: 50%;
-  border: 1px dashed rgba(255,255,255,.35);
+  border: 2px solid rgba(255,255,255,.55);
+  pointer-events: none;
+  transition: border-color .35s;
+}
+
+/* ── Edge notch segments ──────────────────────────────────── */
+/* 8 white rectangular tabs evenly around the rim */
+.bc-notches {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
   pointer-events: none;
 }
-/* Top-of-stack indicator gloss on the very last chip */
-.pot-chip-vis:last-child::after {
-  content: '';
+.bc-notch {
   position: absolute;
-  top: 2px; left: 12px; right: 12px; height: 4px;
+  width: 10px;
+  height: 6px;
+  background: rgba(255,255,255,.72);
+  border-radius: 3px;
+  left: 50%;
+  top: 4px;
+  transform-origin: 50% calc(48px - 4px); /* radius - top offset */
+  margin-left: -5px;
+  transition: background .35s;
+}
+/* Rotate each notch evenly around the circle */
+.bc-notch:nth-child(1) { transform: rotate(0deg);   }
+.bc-notch:nth-child(2) { transform: rotate(45deg);  }
+.bc-notch:nth-child(3) { transform: rotate(90deg);  }
+.bc-notch:nth-child(4) { transform: rotate(135deg); }
+.bc-notch:nth-child(5) { transform: rotate(180deg); }
+.bc-notch:nth-child(6) { transform: rotate(225deg); }
+.bc-notch:nth-child(7) { transform: rotate(270deg); }
+.bc-notch:nth-child(8) { transform: rotate(315deg); }
+
+/* ── Inner white circle ───────────────────────────────────── */
+.bc-inner-ring {
+  position: absolute;
+  inset: 18px;
   border-radius: 50%;
-  background: rgba(255,255,255,.22);
+  background: rgba(255,255,255,.14);
+  border: 2px solid rgba(255,255,255,.6);
   pointer-events: none;
+  transition: border-color .35s, background .35s;
 }
 
-@keyframes chipStackIn {
-  from { opacity:0; transform:translateY(-14px) scale(.8); }
-  to   { opacity:1; transform:translateY(0)     scale(1);  }
-}
-
-/* Pot chip colour palettes */
-.pvc-50   { background:linear-gradient(180deg,var(--chip-blue-hi),var(--chip-blue-mid) 50%,var(--chip-blue-dk)); }
-.pvc-100  { background:linear-gradient(180deg,var(--chip-red-hi),var(--chip-red-mid) 50%,var(--chip-red-dk)); }
-.pvc-500  { background:linear-gradient(180deg,var(--chip-green-hi),var(--chip-green-mid) 50%,var(--chip-green-dk)); }
-.pvc-1k   { background:linear-gradient(180deg,var(--chip-purple-hi),var(--chip-purple-mid) 50%,var(--chip-purple-dk)); }
-.pvc-10k  { background:linear-gradient(180deg,var(--chip-gold-hi),var(--chip-gold-mid) 50%,var(--chip-gold-dk)); }
-.pvc-25   { background:linear-gradient(180deg,#c0a060,#8a6030 50%,#4a3010); }
-.pvc-10   { background:linear-gradient(180deg,#d0d0d0,#909090 50%,#505050); }
-.pvc-5    { background:linear-gradient(180deg,#e0a0a0,#b06060 50%,#603030); }
-
-.pot-info {
+/* ── Centre content ───────────────────────────────────────── */
+.bc-center {
+  position: absolute;
+  inset: 0;
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 2px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  pointer-events: none;
+  z-index: 5;
 }
-.pot-label {
-  font-size: .52rem; letter-spacing: .3em; text-transform: uppercase; opacity: .36;
-}
-.pot-amount {
+.bc-amount {
   font-family: 'Orbitron', sans-serif;
-  font-size: clamp(.95rem, 2.5vw, 1.35rem);
-  font-weight: 700;
-  color: var(--gold-lt);
-  text-shadow: 0 0 10px rgba(201,168,76,.22);
-  transition: color .2s, text-shadow .2s;
+  font-size: .82rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: .02em;
+  line-height: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,.8), 0 0 8px rgba(0,0,0,.5);
+  transition: opacity .25s, font-size .2s;
 }
-.pot-amount.has-bet { text-shadow: var(--glow-gold); }
+/* Shrink font for large amounts that won't fit */
+.bc-amount.small  { font-size: .68rem; }
+.bc-amount.xsmall { font-size: .56rem; }
+
+.bc-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .42rem;
+  font-weight: 600;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.6);
+  text-shadow: 0 1px 3px rgba(0,0,0,.7);
+  transition: opacity .25s;
+}
+
+/* ── Gloss arc — top-left highlight ──────────────────────── */
+.bc-gloss {
+  position: absolute;
+  top: 12%; left: 16%;
+  width: 42%; height: 32%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 35%, rgba(255,255,255,.28) 0%, transparent 70%);
+  transform: rotate(-30deg);
+  pointer-events: none;
+  z-index: 6;
+  transition: opacity .35s;
+}
+
+/* Win/lose exit animations */
+.bet-chip.exit-win {
+  animation: betChipWin .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes betChipWin {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  50%  { transform: scale(1.18); filter: brightness(1.6) drop-shadow(0 0 14px rgba(201,168,76,1)); }
+  100% { transform: scale(.4) translateY(-20px); opacity: 0; }
+}
+.bet-chip.exit-lose {
+  animation: betChipLose .4s ease-in forwards;
+}
+@keyframes betChipLose {
+  from { transform: scale(1);  opacity: 1; }
+  to   { transform: scale(.5) translateY(12px); opacity: 0; }
+}
+
+/* pot-amount is now inside .bc-center — keep ID accessible for JS but
+   the visual is handled by .bc-amount inside the chip face */
+.pot-amount {
+  /* JS still sets textContent on this element; bc-amount mirrors it visually */
+  display: none; /* hidden — bc-amount is the visual label inside the chip */
+}
 
 /* Balance strip */
 .balance-strip {
@@ -556,26 +676,29 @@ body {
 /* ── Layer 4: inner solid ring (::after) ────────────────────── */
 /* ── Layer 5: value text ────────────────────────────────────── */
 
-/* Notch/dashed ring — mimics real casino edge spots */
+/* ── Chip layer system ────────────────────────────────────────────
+   ::before = outer dashed notch ring (casino edge spots)
+   ::after  = inner solid gloss ring
+   ─────────────────────────────────────────────────────────────── */
 .chip::before {
   content: '';
   position: absolute;
-  inset: 5px;
+  inset: 6px;
   border-radius: 50%;
-  /* Creates the inner lighter band */
-  border: 2px dashed rgba(255,255,255,.52);
+  border: 1.5px dashed rgba(255,255,255,.55);
   pointer-events: none;
   z-index: 2;
+  /* Subtle rotation animation when selected */
+  transition: border-color .2s;
 }
-
-/* Solid inner circle band */
 .chip::after {
   content: '';
   position: absolute;
-  inset: 11px;
+  inset: 13px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(0,0,0,.1);
+  /* Dark inner ring creates the centre label area */
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.14);
   pointer-events: none;
   z-index: 2;
 }
@@ -608,10 +731,21 @@ body {
   filter: grayscale(.85) brightness(.8);
   transform: none !important;
 }
-/* Selected highlight ring */
+/* Selected — bright notch ring + outer glow */
 .chip.chip-selected::before {
-  border-color: rgba(255,255,255,.9);
-  box-shadow: 0 0 0 2px rgba(255,255,255,.5);
+  border-color: rgba(255,255,255,.95);
+  border-style: solid;
+}
+.chip.chip-selected {
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.7),
+    0 0 0 4px rgba(255,255,255,.2),
+    0 10px 28px rgba(0,0,0,.75),
+    0 3px 6px rgba(0,0,0,.55),
+    inset 0 3px 0 rgba(255,255,255,.36),
+    inset 0 -3px 0 rgba(0,0,0,.4);
+  transform: translateY(-4px) scale(1.06);
+  filter: brightness(1.12);
 }
 
 /* Place animation */
@@ -983,9 +1117,7 @@ body {
   .chip::before { inset:4px; }
   .chip::after  { inset:9px; }
 
-  .pot-stack-area { height:70px; width:60px; }
-  .chip-tower { width:52px; }
-  .pot-chip-vis { width:52px; height:12px; }
+
 
   .bet-utils { gap:5px; }
   .util-btn { font-size:.62rem; padding:5px 10px; }
@@ -1004,17 +1136,21 @@ body {
   .game-log { max-height:54px; }
   .log-entry { font-size:.56rem; }
   .rules-grid { grid-template-columns:1fr; }
+  .bet-chip { width: 80px; height: 80px; }
+  .bc-amount { font-size: .72rem; }
+  .bc-notch { width: 8px; height: 5px; transform-origin: 50% calc(40px - 4px); }
+  .bc-notch:nth-child(1){transform:rotate(0deg);} .bc-notch:nth-child(2){transform:rotate(45deg);} .bc-notch:nth-child(3){transform:rotate(90deg);} .bc-notch:nth-child(4){transform:rotate(135deg);} .bc-notch:nth-child(5){transform:rotate(180deg);} .bc-notch:nth-child(6){transform:rotate(225deg);} .bc-notch:nth-child(7){transform:rotate(270deg);} .bc-notch:nth-child(8){transform:rotate(315deg);}
 }
 
 @media (max-width: 380px) {
   :root { --card-w:46px; --card-h:66px; }
   .chip { width:44px; height:44px; }
   .chip-value { font-size:.42rem; }
-  .chip-tower { width:46px; }
-  .pot-chip-vis { width:46px; height:10px; }
-  .pot-stack-area { height:60px; width:52px; }
+
   .btn { font-size:.66rem; padding:8px 11px; }
   .btn.btn-visible { max-width:110px; padding-left:11px; padding-right:11px; }
+  .bet-chip { width: 70px; height: 70px; }
+  .bc-amount { font-size: .62rem; }
 }
 
 @media (min-width:601px) and (max-width:900px) {
@@ -1023,9 +1159,7 @@ body {
   .table-felt { max-width:720px; gap:12px; padding:20px 18px 16px; }
   .chip { width:54px; height:54px; }
   .chip-value { font-size:.5rem; }
-  .pot-stack-area { height:76px; }
-  .chip-tower { width:56px; }
-  .pot-chip-vis { width:56px; height:12px; }
+
 }
 
 @media (min-width:901px) {
@@ -1055,9 +1189,7 @@ body {
   .sb-pod-amount { font-size:.7rem; }
   .sb-btn { width:24px; height:24px; }
 
-  .pot-stack-area { height:100px; width:80px; }
-  .chip-tower { width:68px; }
-  .pot-chip-vis { width:68px; height:15px; }
+
   .pot-amount { font-size:1.38rem; }
   .bal-amount { font-size:1.08rem; }
 
@@ -1079,6 +1211,8 @@ body {
   .deck-indicator { right:22px; top:20px; }
   .deck-stack { width:38px; height:54px; }
   .ds { width:36px; height:52px; }
+  .bet-chip { width: 108px; height: 108px; }
+  .bc-amount { font-size: .9rem; }
 }
 
 @media (min-width:1280px) {
@@ -1096,6 +1230,8 @@ body {
   .dealer-zone { min-height:154px; }
   .player-zone  { min-height:154px; }
   .game-log { max-height:104px; }
+  .bet-chip { width: 114px; height: 114px; }
+  .bc-amount { font-size: .95rem; }
 }
 
 @media (min-width:1920px) {
@@ -1109,6 +1245,48 @@ body {
   .btn  { min-height:44px; }
   .icon-btn { min-width:40px; min-height:40px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   CHIP EDGE LINES  — thin accent bars at 3 clock positions
+   Applied via a generated background on the chip layer.
+   These simulate the colour bar segments on real casino chips.
+   ═══════════════════════════════════════════════════════ */
+.chip::before {
+  /* Override: use solid thin border segments instead of pure dashed */
+  border-style: dashed;
+  border-width: 2px;
+}
+
+/* Subtle chip surface gloss streak — top-left arc */
+.chip .chip-gloss {
+  position: absolute;
+  top: 10%; left: 18%;
+  width: 36%; height: 28%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 35%, rgba(255,255,255,.22) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 4;
+  transform: rotate(-30deg);
+}
+
+/* ── Bet zone accent — thin gold separator line above chip tray ── */
+.chip-tray {
+  position: relative;
+}
+.chip-tray::before {
+  content: '';
+  position: absolute;
+  top: -6px; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,.25), transparent);
+  pointer-events: none;
+}
+
+/* ── Pot area: add a subtle glow ring when bet is active ─────── */
+.bet-pot.has-active-bet .pot-stack-area {
+  filter: drop-shadow(0 0 8px rgba(201,168,76,.18));
+}
+
+/* ── Stack count badge — shown when > 8 chips are in the bet ─── */
 
 
 /* ───────── FRIEND TABLE BACKGROUND ───────── */
