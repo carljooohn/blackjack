@@ -43,6 +43,9 @@ body {
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .hidden { display: none !important; }
@@ -152,6 +155,8 @@ body {
 #app {
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: 1200px;          /* cap on ultrawide so content stays cohesive */
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -245,15 +250,15 @@ body {
 /* ── Casino Table ─────────────────────────────────────────── */
 .casino-wrap {
   flex: 1;
-  padding: 12px;
+  padding: 20px 16px 24px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;           /* vertical centering within available space */
   justify-content: center;
 }
 
 .table-felt {
   width: 100%;
-  max-width: 860px;
+  max-width: 980px;              /* wider on desktop — fills the space properly */
   background:
     radial-gradient(ellipse at 50% 50%, #175c30 0%, #0d4524 50%, #08301a 100%);
   border-radius: 28px;
@@ -263,12 +268,12 @@ body {
     0 20px 80px rgba(0,0,0,.8),
     inset 0 0 100px rgba(0,0,0,.35),
     inset 0 0 40px rgba(0,255,136,.04);
-  padding: 20px 16px 16px;
+  padding: 28px 28px 22px;       /* more generous padding on desktop */
   position: relative;
   overflow: hidden;
   display: grid;
   grid-template-rows: auto auto auto auto auto auto auto;
-  gap: 10px;
+  gap: 14px;                     /* more breathing room between rows */
 }
 
 /* Felt texture overlay */
@@ -566,7 +571,7 @@ body {
 
 .status-msg {
   font-family: 'Cinzel', serif;
-  font-size: clamp(1.1rem, 3.5vw, 1.75rem);
+  font-size: clamp(1.1rem, 2.2vw, 1.75rem);
   font-weight: 700;
   letter-spacing: .06em;
   opacity: 0;
@@ -592,7 +597,7 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: shimmer 1s linear infinite;
-  font-size: clamp(1.3rem, 4vw, 2.2rem);
+  font-size: clamp(1.3rem, 2.8vw, 2.2rem);
 }
 .status-msg.lose { color: #f07070; }
 .status-msg.push { color: #9ee8be; }
@@ -636,7 +641,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32px;
+  gap: 40px;
   flex-wrap: wrap;
 }
 
@@ -644,26 +649,74 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
-.pot-chips-visual {
+
+/* ── Chip Tower (vertical stacking pot) ──────────────────── */
+.chip-tower-wrap {
+  /* Fixed height area that the tower grows into from the bottom */
+  height: 80px;
   display: flex;
-  gap: -6px;
-  min-height: 30px;
   align-items: flex-end;
   justify-content: center;
 }
-.pot-chip-vis {
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  border: 2px dashed rgba(255,255,255,.5);
-  margin: 0 -4px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.5);
-  animation: potChipIn .3s cubic-bezier(.34,1.56,.64,1) both;
+
+.chip-tower {
+  position: relative;
+  width: 56px;         /* matches pot chip diameter */
+  /* height grows via JS-set --tower-h custom prop */
+  height: var(--tower-h, 0px);
+  transition: height .2s ease;
 }
-@keyframes potChipIn {
-  from { transform: translateY(-20px) scale(.3); opacity: 0; }
-  to   { transform: translateY(0) scale(1); opacity: 1; }
+
+/* Each chip in the tower is absolutely positioned */
+.pot-chip-vis {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 12px;          /* each chip is a disc slice */
+  border-radius: 50%;
+  border-top: 2px solid rgba(255,255,255,.35);
+  border-bottom: 2px solid rgba(0,0,0,.45);
+  box-shadow:
+    0 2px 6px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.2);
+  /* bottom set by JS via style.bottom */
+  animation: chipStackIn .28s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+/* Dashed ring detail on every pot chip */
+.pot-chip-vis::before {
+  content: '';
+  position: absolute;
+  inset: 2px 4px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,.3);
+}
+
+@keyframes chipStackIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(.7); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)     scale(1);  }
+}
+
+/* Win animation: chips fly up */
+.pot-chip-vis.chip-win-out {
+  animation: chipWinOut .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes chipWinOut {
+  0%   { transform: translateX(-50%) translateY(0)     scale(1);   opacity: 1; }
+  50%  { transform: translateX(-50%) translateY(-30px) scale(1.3); opacity: 1; filter: brightness(1.6); }
+  100% { transform: translateX(-50%) translateY(-50px) scale(.5);  opacity: 0; }
+}
+
+/* Loss animation: chips sink down */
+.pot-chip-vis.chip-lose-out {
+  animation: chipLoseOut .4s ease-in forwards;
+}
+@keyframes chipLoseOut {
+  from { transform: translateX(-50%) translateY(0); opacity: 1; }
+  to   { transform: translateX(-50%) translateY(20px) scale(.6); opacity: 0; }
 }
 
 .pot-label, .bal-label {
@@ -699,65 +752,205 @@ body {
 /* ── Chip Tray ────────────────────────────────────────────── */
 .chip-tray {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
+/* ── Casino Chip base ─────────────────────────────────────── */
 .chip {
-  width: 50px; height: 50px;
+  /* Size and shape */
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+
+  /* Label */
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Orbitron', sans-serif;
   font-size: .6rem;
-  font-weight: 700;
+  font-weight: 900;
   color: #fff;
-  cursor: pointer;
-  border: 3px dashed rgba(255,255,255,.55);
-  position: relative;
-  transition: transform .15s cubic-bezier(.34,1.56,.64,1), filter .15s, opacity .15s;
-  user-select: none;
-  box-shadow: var(--chip-shadow), inset 0 1px 0 rgba(255,255,255,.2);
+  letter-spacing: .04em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.7);
+  z-index: 0;
+
+  /* Shadows & transitions */
+  box-shadow:
+    0 6px 20px rgba(0,0,0,.65),
+    0 2px 4px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.25),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+  transition:
+    transform .18s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .18s ease,
+    filter .15s ease;
 }
+
+/* Outer serrated / notched edge ring */
 .chip::before {
   content: '';
   position: absolute;
-  inset: 4px;
+  inset: 5px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,.25);
+  border: 2px dashed rgba(255,255,255,.5);
   pointer-events: none;
+  z-index: 1;
 }
-.chip:hover:not(.chip-off) { transform: translateY(-6px) scale(1.12); filter: brightness(1.25); }
-.chip:active:not(.chip-off) { transform: scale(.9); }
-.chip.chip-off { opacity: .28; cursor: not-allowed; filter: grayscale(.7); }
 
-/* Chip click pulse */
+/* Inner gloss ring */
+.chip::after {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.18);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chip:hover:not(.chip-off) {
+  transform: translateY(-8px) scale(1.1);
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.7),
+    0 4px 8px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.3),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+  filter: brightness(1.2);
+}
+
+.chip:active:not(.chip-off) {
+  transform: scale(.92) translateY(2px);
+  box-shadow:
+    0 3px 10px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -1px 0 rgba(0,0,0,.3);
+}
+
+.chip.chip-off {
+  opacity: .25;
+  cursor: not-allowed;
+  filter: grayscale(.8);
+  transform: none !important;
+}
+
+/* Click-place bounce animation */
 .chip.placing {
-  animation: chipPop .32s cubic-bezier(.34,1.56,.64,1);
+  animation: chipPop .35s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes chipPop {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.45) translateY(-8px); filter: brightness(1.5); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(1) translateY(0); }
+  35%  { transform: scale(1.4) translateY(-10px); filter: brightness(1.5); }
+  65%  { transform: scale(.95) translateY(2px); }
+  100% { transform: scale(1) translateY(0); }
 }
 
-.chip-5   { background: radial-gradient(circle at 35% 35%, #e74c3c, #7d1212); }
-.chip-10  { background: radial-gradient(circle at 35% 35%, #3498db, #1a4a8b); }
-.chip-25  { background: radial-gradient(circle at 35% 35%, #27ae60, #0f4f28); }
-.chip-50  { background: radial-gradient(circle at 35% 35%, #7f8c8d, #2c3e50); }
-.chip-100 { background: radial-gradient(circle at 35% 35%, #9b59b6, #4a1572); }
-.chip-500 { background: radial-gradient(circle at 35% 35%, #f39c12, #7d4f0a); }
+/* ── Chip colour identities ───────────────────────────────── */
+/* $50 — steel blue */
+.chip-50 {
+  background:
+    radial-gradient(circle at 38% 32%, #5b9bd5 0%, #2471a3 40%, #154360 100%);
+  box-shadow:
+    0 6px 20px rgba(36,113,163,.6),
+    0 2px 4px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.25),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
+.chip-50:hover:not(.chip-off) {
+  box-shadow:
+    0 14px 30px rgba(36,113,163,.8),
+    0 4px 8px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.3),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
 
-/* Pot chip color map */
-.pvc-5   { background: radial-gradient(circle at 35% 35%, #e74c3c, #7d1212); }
-.pvc-10  { background: radial-gradient(circle at 35% 35%, #3498db, #1a4a8b); }
-.pvc-25  { background: radial-gradient(circle at 35% 35%, #27ae60, #0f4f28); }
-.pvc-50  { background: radial-gradient(circle at 35% 35%, #7f8c8d, #2c3e50); }
-.pvc-100 { background: radial-gradient(circle at 35% 35%, #9b59b6, #4a1572); }
-.pvc-500 { background: radial-gradient(circle at 35% 35%, #f39c12, #7d4f0a); }
+/* $100 — deep crimson */
+.chip-100 {
+  background:
+    radial-gradient(circle at 38% 32%, #ec7063 0%, #c0392b 40%, #7b241c 100%);
+  box-shadow:
+    0 6px 20px rgba(192,57,43,.65),
+    0 2px 4px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.25),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
+.chip-100:hover:not(.chip-off) {
+  box-shadow:
+    0 14px 30px rgba(192,57,43,.85),
+    0 4px 8px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.3),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
+
+/* $500 — forest green */
+.chip-500 {
+  background:
+    radial-gradient(circle at 38% 32%, #58d68d 0%, #1e8449 40%, #0e4b28 100%);
+  box-shadow:
+    0 6px 20px rgba(30,132,73,.65),
+    0 2px 4px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.25),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
+.chip-500:hover:not(.chip-off) {
+  box-shadow:
+    0 14px 30px rgba(30,132,73,.85),
+    0 4px 8px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.3),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
+
+/* $1K — midnight purple */
+.chip-1k {
+  background:
+    radial-gradient(circle at 38% 32%, #a569bd 0%, #7d3c98 40%, #4a235a 100%);
+  box-shadow:
+    0 6px 20px rgba(125,60,152,.65),
+    0 2px 4px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.25),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
+.chip-1k:hover:not(.chip-off) {
+  box-shadow:
+    0 14px 30px rgba(125,60,152,.85),
+    0 4px 8px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.3),
+    inset 0 -2px 0 rgba(0,0,0,.3);
+}
+
+/* $10K — gold / vegas elite */
+.chip-10k {
+  background:
+    radial-gradient(circle at 38% 32%, #f7dc6f 0%, #d4a843 40%, #8a6914 100%);
+  color: #2c1a00;
+  text-shadow: 0 1px 2px rgba(255,255,255,.4);
+  box-shadow:
+    0 6px 20px rgba(212,168,67,.65),
+    0 2px 4px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.4),
+    inset 0 -2px 0 rgba(0,0,0,.25);
+}
+.chip-10k:hover:not(.chip-off) {
+  box-shadow:
+    0 14px 30px rgba(212,168,67,.9),
+    0 4px 8px rgba(0,0,0,.5),
+    inset 0 2px 0 rgba(255,255,255,.5),
+    inset 0 -2px 0 rgba(0,0,0,.25),
+    0 0 30px rgba(212,168,67,.4);
+}
+
+/* ── Pot chip colour slices (tower discs) ─────────────────── */
+.pvc-50    { background: radial-gradient(ellipse at 50% 30%, #5b9bd5, #154360); }
+.pvc-100   { background: radial-gradient(ellipse at 50% 30%, #ec7063, #7b241c); }
+.pvc-500   { background: radial-gradient(ellipse at 50% 30%, #58d68d, #0e4b28); }
+.pvc-1k    { background: radial-gradient(ellipse at 50% 30%, #a569bd, #4a235a); }
+.pvc-10k   { background: radial-gradient(ellipse at 50% 30%, #f7dc6f, #8a6914); }
 
 /* ── Controls ─────────────────────────────────────────────── */
 .controls {
@@ -988,6 +1181,219 @@ body {
   to   { transform: scale(1.08) rotate(2deg); }
 }
 
+/* ── Side Bets ────────────────────────────────────────────── */
+.side-bets-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.side-bet-block {
+  flex: 1;
+  min-width: 130px;
+  max-width: 240px;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(212,168,67,.2);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color .25s;
+}
+.side-bet-block.sb-active {
+  border-color: rgba(212,168,67,.6);
+  box-shadow: 0 0 14px rgba(212,168,67,.15);
+}
+.side-bet-block.sb-locked {
+  opacity: .45;
+  pointer-events: none;
+}
+
+.sb-title {
+  font-family: 'Cinzel', serif;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--gold-lt);
+  letter-spacing: .12em;
+}
+.sb-desc {
+  font-size: .58rem;
+  opacity: .45;
+  text-align: center;
+  letter-spacing: .04em;
+  line-height: 1.3;
+}
+
+.sb-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sb-adj {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(212,168,67,.4);
+  background: rgba(212,168,67,.08);
+  color: var(--gold-lt);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, transform .1s;
+  flex-shrink: 0;
+}
+.sb-adj:hover { background: rgba(212,168,67,.2); transform: scale(1.1); }
+.sb-adj:active { transform: scale(.9); }
+
+.sb-amount {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--gold-lt);
+  min-width: 36px;
+  text-align: center;
+}
+
+.sb-result {
+  font-size: .65rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-align: center;
+  border-radius: 8px;
+  padding: 3px 8px;
+  animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+.sb-result.sb-win  { background: rgba(0,255,136,.12); color: var(--neon-green); border: 1px solid rgba(0,255,136,.3); }
+.sb-result.sb-lose { background: rgba(255,51,85,.1);  color: #f07070;           border: 1px solid rgba(255,51,85,.25); }
+
+/* ── Player Name Modal ────────────────────────────────────── */
+.name-modal-box {
+  max-width: 420px;
+  text-align: center;
+}
+.name-modal-sub {
+  font-size: .82rem;
+  opacity: .55;
+  letter-spacing: .04em;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.name-input {
+  width: 100%;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(212,168,67,.4);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cream);
+  letter-spacing: .08em;
+  outline: none;
+  text-align: center;
+  margin-bottom: 18px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.name-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 14px rgba(212,168,67,.25);
+}
+.name-modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.name-confirm-btn { min-width: 140px; }
+
+/* ── Leaderboard Modal ────────────────────────────────────── */
+.lb-modal-box {
+  max-width: 760px;
+  width: 100%;
+}
+
+.lb-tabs {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.lb-tab {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: .78rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(212,168,67,.3);
+  background: transparent;
+  color: rgba(245,237,214,.5);
+  cursor: pointer;
+  transition: all .2s;
+}
+.lb-tab.active, .lb-tab:hover {
+  background: rgba(212,168,67,.15);
+  border-color: var(--gold);
+  color: var(--gold-lt);
+}
+
+.lb-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.07);
+  margin-bottom: 14px;
+}
+.lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .78rem;
+}
+.lb-table th {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .58rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: .7;
+  padding: 10px 12px;
+  text-align: left;
+  background: rgba(0,0,0,.4);
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.lb-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  color: var(--cream);
+  white-space: nowrap;
+}
+.lb-table tbody tr:last-child td { border-bottom: none; }
+.lb-table tbody tr:nth-child(odd)  { background: rgba(255,255,255,.02); }
+.lb-table tbody tr:nth-child(even) { background: rgba(0,0,0,.15); }
+.lb-table tbody tr.lb-me { background: rgba(212,168,67,.07); }
+.lb-table tbody tr.lb-me td:first-child::before { content: '▶ '; color: var(--gold); }
+.lb-rank-1 td:first-child { color: var(--gold);     font-weight: 700; }
+.lb-rank-2 td:first-child { color: #c0c0c0;         font-weight: 700; }
+.lb-rank-3 td:first-child { color: #cd7f32;         font-weight: 700; }
+.lb-profit-pos { color: var(--neon-green) !important; }
+.lb-profit-neg { color: #f07070 !important; }
+
+.lb-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.lb-empty {
+  text-align: center;
+  padding: 28px;
+  opacity: .35;
+  font-size: .8rem;
+  letter-spacing: .1em;
+}
+
 /* ══════════════════════════════════════════════════════════
    RESPONSIVE — Mobile & Tablet
    ══════════════════════════════════════════════════════════ */
@@ -1007,7 +1413,7 @@ body {
   .hud-stat .hs-val   { font-size: .65rem; }
   .hud-stats { gap: 5px; }
 
-  .casino-wrap { padding: 8px 6px; }
+  .casino-wrap { padding: 8px 6px; align-items: flex-start; }
 
   .table-felt {
     border-radius: 18px;
@@ -1028,8 +1434,11 @@ body {
   .card-suit-lg { font-size: 1.8rem; }
   .card-face { padding: 4px; }
 
-  .chip { width: 44px; height: 44px; font-size: .55rem; }
-  .chip-tray { gap: 6px; }
+  .chip { width: 52px; height: 52px; font-size: .52rem; }
+  .chip-tray { gap: 7px; }
+  .chip-tower-wrap { height: 64px; }
+  .chip-tower { width: 52px; }
+  .pot-chip-vis { width: 52px; height: 10px; }
 
   .bet-utils { gap: 6px; }
   .btn-redo, .btn-maxbet, .btn-clear, .btn-reset-bal { font-size: .68rem; padding: 8px 12px; }
@@ -1045,24 +1454,152 @@ body {
   .game-log { max-height: 60px; }
   .log-entry { font-size: .6rem; }
 
+  .side-bets-row { gap: 8px; }
+  .side-bet-block { min-width: 110px; padding: 8px 10px; }
+  .sb-title { font-size: .65rem; }
+  .sb-desc  { font-size: .52rem; }
+  .lb-table th, .lb-table td { padding: 7px 8px; font-size: .68rem; }
   .rules-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 380px) {
   :root { --card-w: 50px; --card-h: 72px; }
-  .chip { width: 40px; height: 40px; font-size: .5rem; }
+  .chip { width: 46px; height: 46px; font-size: .48rem; }
+  .chip-tower-wrap { height: 56px; }
+  .chip-tower { width: 46px; }
+  .pot-chip-vis { width: 46px; height: 9px; }
   .btn { font-size: .68rem; padding: 8px 11px; }
   .controls { gap: 5px; }
 }
 
 @media (min-width: 601px) and (max-width: 900px) {
   :root { --card-w: 66px; --card-h: 94px; }
-  .table-felt { max-width: 680px; }
+  .casino-wrap { align-items: flex-start; }
+  .table-felt {
+    max-width: 720px;
+    gap: 12px;
+    padding: 22px 20px 18px;
+  }
+}
+
+/* ── Desktop 901px–1280px (laptop / 1080p) ──────────────────── */
+@media (min-width: 901px) {
+  :root {
+    --card-w: 80px;
+    --card-h: 114px;
+  }
+
+  .hud {
+    padding: 12px 28px;
+  }
+  .hud-stat { min-width: 56px; }
+  .hs-label { font-size: .6rem; }
+  .hs-val   { font-size: .85rem; }
+  .hud-brand { font-size: 1rem; gap: 8px; }
+
+  .casino-wrap {
+    padding: 24px 24px 28px;
+  }
+
+  .table-felt {
+    gap: 16px;
+    padding: 32px 36px 28px;
+  }
+
+  .dealer-zone  { min-height: 150px; }
+  .player-zone  { min-height: 150px; }
+
+  .hand-zone { padding: 12px 16px; border-radius: 20px; }
+  .zone-label { font-size: .72rem; gap: 12px; }
+  .score-pill { font-size: .82rem; padding: 3px 14px; }
+
+  .card-rank    { font-size: 1.1rem; }
+  .card-suit-sm { font-size: .85rem; }
+  .card-suit-lg { font-size: 2.6rem; }
+  .card-face    { padding: 6px; }
+
+  .status-area { min-height: 64px; }
+  .status-msg  { font-size: clamp(1.3rem, 2vw, 2rem); }
+
+  .bet-pot-area { gap: 56px; }
+  .chip-tower-wrap { height: 100px; }
+  .chip-tower { width: 64px; }
+  .pot-chip-vis { width: 64px; height: 14px; }
+  .pot-amount, .bal-amount { font-size: 1.5rem; }
+  .pot-label, .bal-label  { font-size: .65rem; letter-spacing: .35em; }
+
+  .chip-tray { gap: 14px; padding: 8px 0; }
+  .chip { width: 72px; height: 72px; font-size: .68rem; }
+
+  .bet-utils { gap: 10px; padding: 4px 0; }
+  .btn {
+    font-size: .85rem;
+    padding: 11px 22px;
+    min-height: 44px;
+  }
+  .btn-deal { font-size: .95rem; padding: 12px 32px; }
+
+  .controls { gap: 10px; }
+
+  .side-bets-row { gap: 16px; }
+  .side-bet-block { padding: 12px 16px; gap: 8px; }
+  .sb-title { font-size: .8rem; }
+  .sb-amount { font-size: .85rem; }
+  .sb-adj { width: 30px; height: 30px; font-size: 1.1rem; }
+
+  .game-log  { max-height: 96px; }
+  .log-entry { font-size: .7rem; }
+
+  .deck-indicator { right: 24px; top: 20px; }
+  .deck-stack { width: 42px; height: 58px; }
+  .ds { width: 40px; height: 56px; }
+}
+
+/* ── Large desktop / 1440p+ ─────────────────────────────────── */
+@media (min-width: 1280px) {
+  :root {
+    --card-w: 86px;
+    --card-h: 122px;
+  }
+
+  .table-felt {
+    max-width: 1060px;
+    gap: 18px;
+    padding: 36px 44px 32px;
+  }
+
+  .chip { width: 76px; height: 76px; font-size: .72rem; }
+  .chip-tray { gap: 16px; }
+
+  .btn { font-size: .88rem; padding: 12px 24px; }
+  .btn-deal { font-size: 1rem; padding: 13px 36px; }
+  .bet-utils { gap: 12px; }
+
+  .status-msg { font-size: clamp(1.5rem, 1.8vw, 2.2rem); }
+  .pot-amount, .bal-amount { font-size: 1.65rem; }
+
+  .dealer-zone  { min-height: 160px; }
+  .player-zone  { min-height: 160px; }
+
+  .game-log { max-height: 110px; }
+}
+
+/* ── Ultrawide 1920px+ ───────────────────────────────────────── */
+@media (min-width: 1920px) {
+  #app { max-width: 1400px; }
+
+  .table-felt {
+    max-width: 1160px;
+    gap: 20px;
+    padding: 40px 52px 36px;
+  }
+
+  .casino-wrap { padding: 32px 32px 36px; }
 }
 
 /* Touch targets */
 @media (hover: none) {
-  .chip { min-width: 44px; min-height: 44px; }
+  .chip { min-width: 52px; min-height: 52px; }
   .btn  { min-height: 44px; }
   .icon-btn { min-width: 40px; min-height: 40px; }
 }

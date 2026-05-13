@@ -70,6 +70,7 @@
       </div>
       <div class="hud-right">
         <button class="icon-btn" id="btn-mute" title="Toggle Sound" aria-label="Mute">🔊</button>
+        <button class="icon-btn" id="btn-lb"   title="Leaderboard" aria-label="Leaderboard">🏆</button>
         <button class="icon-btn" id="btn-rules" title="Rules" aria-label="Rules">?</button>
       </div>
     </header>
@@ -136,10 +137,36 @@
           </div>
         </section>
 
+        <!-- ── SIDE BETS ── -->
+        <div class="side-bets-row" id="side-bets-row">
+          <div class="side-bet-block" id="sb-pp-block">
+            <div class="sb-title">Perfect Pair</div>
+            <div class="sb-desc">Pays if your 2 cards are a pair</div>
+            <div class="sb-input-wrap">
+              <button class="sb-adj" onclick="adjustSideBet('pp',-50)">−</button>
+              <span class="sb-amount" id="sb-pp-amount">$0</span>
+              <button class="sb-adj" onclick="adjustSideBet('pp',50)">+</button>
+            </div>
+            <div class="sb-result hidden" id="sb-pp-result"></div>
+          </div>
+          <div class="side-bet-block" id="sb-21-block">
+            <div class="sb-title">21+3</div>
+            <div class="sb-desc">Your 2 cards + dealer up card</div>
+            <div class="sb-input-wrap">
+              <button class="sb-adj" onclick="adjustSideBet('tt',-50)">−</button>
+              <span class="sb-amount" id="sb-tt-amount">$0</span>
+              <button class="sb-adj" onclick="adjustSideBet('tt',50)">+</button>
+            </div>
+            <div class="sb-result hidden" id="sb-tt-result"></div>
+          </div>
+        </div>
+
         <!-- ── BET POT ── -->
         <div class="bet-pot-area">
           <div class="pot-display" id="pot-display">
-            <div class="pot-chips-visual" id="pot-chips-visual"></div>
+            <div class="chip-tower-wrap">
+              <div class="chip-tower" id="pot-chips-visual"></div>
+            </div>
             <div class="pot-label">BET</div>
             <div class="pot-amount" id="pot-amount">$0</div>
           </div>
@@ -151,12 +178,11 @@
 
         <!-- ── CHIP TRAY ── -->
         <div class="chip-tray" id="chip-tray">
-          <div class="chip chip-5"   data-val="5"   onclick="placeBet(5)">$5</div>
-          <div class="chip chip-10"  data-val="10"  onclick="placeBet(10)">$10</div>
-          <div class="chip chip-25"  data-val="25"  onclick="placeBet(25)">$25</div>
-          <div class="chip chip-50"  data-val="50"  onclick="placeBet(50)">$50</div>
-          <div class="chip chip-100" data-val="100" onclick="placeBet(100)">$100</div>
-          <div class="chip chip-500" data-val="500" onclick="placeBet(500)">$500</div>
+          <div class="chip chip-50"    data-val="50"    onclick="placeBet(50)">$50</div>
+          <div class="chip chip-100"   data-val="100"   onclick="placeBet(100)">$100</div>
+          <div class="chip chip-500"   data-val="500"   onclick="placeBet(500)">$500</div>
+          <div class="chip chip-1k"    data-val="1000"  onclick="placeBet(1000)">$1K</div>
+          <div class="chip chip-10k"   data-val="10000" onclick="placeBet(10000)">$10K</div>
         </div>
 
         <!-- ── BET UTILITY BUTTONS ── -->
@@ -202,9 +228,51 @@
         <div class="rule-item"><span class="rule-icon">✂️</span><strong>Split</strong> matching rank cards</div>
         <div class="rule-item"><span class="rule-icon">🛡️</span><strong>Insurance</strong> when dealer shows Ace</div>
         <div class="rule-item"><span class="rule-icon">🤝</span><strong>Push</strong> returns your bet</div>
+        <div class="rule-item"><span class="rule-icon">💎</span><strong>Perfect Pair</strong> Mixed 6:1 · Coloured 12:1 · Perfect 25:1</div>
+        <div class="rule-item"><span class="rule-icon">🎯</span><strong>21+3</strong> Flush 5:1 · Straight 10:1 · Three-of-a-kind 30:1 · Straight Flush 40:1 · Suited Trips 100:1</div>
       </div>
       <div class="keyboard-hint">
-        <strong>Keyboard:</strong> H = Hit · S = Stand · D = Double · P = Split
+        <strong>Keyboard:</strong> H = Hit · S = Stand · D = Double · P = Split &nbsp;|&nbsp; 4-Deck Shoe
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Name Modal -->
+  <div class="modal-overlay" id="name-modal">
+    <div class="modal-box name-modal-box">
+      <h2 class="modal-title">Welcome to Royal Blackjack</h2>
+      <p class="name-modal-sub">Enter your name to track your progress on the leaderboard.</p>
+      <input class="name-input" id="player-name-input" type="text" maxlength="20" placeholder="Your name…" autocomplete="off" spellcheck="false">
+      <div class="name-modal-btns">
+        <button class="btn btn-deal name-confirm-btn" id="btn-name-confirm">Let's Play ♠</button>
+        <button class="btn btn-new" id="btn-name-skip">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div class="modal-overlay hidden" id="lb-modal">
+    <div class="modal-box lb-modal-box">
+      <button class="modal-close" id="lb-modal-close">✕</button>
+      <h2 class="modal-title">🏆 Leaderboard</h2>
+      <div class="lb-tabs">
+        <button class="lb-tab active" data-sort="balance">Balance</button>
+        <button class="lb-tab" data-sort="profit">Profit</button>
+        <button class="lb-tab" data-sort="wins">Wins</button>
+      </div>
+      <div class="lb-table-wrap">
+        <table class="lb-table" id="lb-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Player</th><th>Balance</th><th>Profit</th>
+              <th>Wins</th><th>Losses</th><th>Best Win</th><th>Streak</th>
+            </tr>
+          </thead>
+          <tbody id="lb-tbody"></tbody>
+        </table>
+      </div>
+      <div class="lb-footer">
+        <button class="btn btn-reset-bal" id="btn-lb-clear">Clear Leaderboard</button>
       </div>
     </div>
   </div>
