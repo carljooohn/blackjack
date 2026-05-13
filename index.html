@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0a1f12">
+  <meta name="theme-color" content="#050e07">
   <title>Royal Blackjack — Vegas Style</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
   <!-- Particles canvas -->
   <canvas id="particles" aria-hidden="true"></canvas>
 
-  <!-- Neon ambient lights -->
+  <!-- Ambient lights -->
   <div class="ambient-lights" aria-hidden="true">
     <div class="amb amb-1"></div>
     <div class="amb amb-2"></div>
@@ -137,71 +137,93 @@
           </div>
         </section>
 
-        <!-- ── SIDE BETS ── -->
-        <div class="side-bets-row" id="side-bets-row">
-          <div class="side-bet-block" id="sb-pp-block">
-            <div class="sb-title">Perfect Pair</div>
-            <div class="sb-desc">Pays if your 2 cards are a pair</div>
-            <div class="sb-input-wrap">
-              <button class="sb-adj" onclick="adjustSideBet('pp',-50)">−</button>
-              <span class="sb-amount" id="sb-pp-amount">$0</span>
-              <button class="sb-adj" onclick="adjustSideBet('pp',50)">+</button>
+        <!-- ══════════════════════════════════════════════
+             BETTING STATION  — chips + pot + side bets
+             ══════════════════════════════════════════════ -->
+        <div class="betting-station">
+
+          <!-- Side bet: Perfect Pair (left) -->
+          <div class="side-bet-pod" id="sb-pp-block">
+            <div class="sb-pod-name">Perfect Pair</div>
+            <div class="sb-pod-controls">
+              <button class="sb-btn sb-minus" onclick="adjustSideBet('pp',-5)">−</button>
+              <span class="sb-pod-amount" id="sb-pp-amount">$0</span>
+              <button class="sb-btn sb-plus" onclick="adjustSideBet('pp',5)">+</button>
             </div>
             <div class="sb-result hidden" id="sb-pp-result"></div>
           </div>
-          <div class="side-bet-block" id="sb-21-block">
-            <div class="sb-title">21+3</div>
-            <div class="sb-desc">Your 2 cards + dealer up card</div>
-            <div class="sb-input-wrap">
-              <button class="sb-adj" onclick="adjustSideBet('tt',-50)">−</button>
-              <span class="sb-amount" id="sb-tt-amount">$0</span>
-              <button class="sb-adj" onclick="adjustSideBet('tt',50)">+</button>
+
+          <!-- Centre: chip selector + pot -->
+          <div class="bet-centre">
+
+            <!-- Bet pot — stacked chips + amount -->
+            <div class="bet-pot" id="pot-display">
+              <div class="pot-stack-area">
+                <div class="chip-tower" id="pot-chips-visual"></div>
+              </div>
+              <div class="pot-info">
+                <span class="pot-label">BET</span>
+                <span class="pot-amount" id="pot-amount">$0</span>
+              </div>
+            </div>
+
+            <!-- Balance strip -->
+            <div class="balance-strip">
+              <span class="bal-label">BALANCE</span>
+              <span class="bal-amount" id="bal-amount">$1,000</span>
+            </div>
+
+            <!-- Chip selector: all 5 chips always visible in a row -->
+            <div class="chip-tray" id="chip-tray">
+              <div class="chip chip-50"  data-val="50"    onclick="placeBet(50)">
+                <span class="chip-value">$50</span>
+              </div>
+              <div class="chip chip-100" data-val="100"   onclick="placeBet(100)">
+                <span class="chip-value">$100</span>
+              </div>
+              <div class="chip chip-500" data-val="500"   onclick="placeBet(500)">
+                <span class="chip-value">$500</span>
+              </div>
+              <div class="chip chip-1k"  data-val="1000"  onclick="placeBet(1000)">
+                <span class="chip-value">$1K</span>
+              </div>
+              <div class="chip chip-10k" data-val="10000" onclick="placeBet(10000)">
+                <span class="chip-value">$10K</span>
+              </div>
+            </div>
+
+            <!-- Bet utility row -->
+            <div class="bet-utils" id="bet-utils">
+              <button class="util-btn" id="btn-clear"   onclick="clearBet()"   data-show="has-bet">✕ Clear</button>
+              <button class="util-btn" id="btn-redo"    onclick="redoBet()"    data-show="can-redo">↺ Redo</button>
+              <button class="util-btn util-maxbet" id="btn-maxbet"  onclick="maxBet()"     data-show="can-bet">⚡ Max</button>
+              <button class="util-btn util-reset"  id="btn-reset-bal" onclick="confirmResetBalance()">↺ Reset $</button>
+            </div>
+
+          </div><!-- .bet-centre -->
+
+          <!-- Side bet: 21+3 (right) -->
+          <div class="side-bet-pod" id="sb-21-block">
+            <div class="sb-pod-name">21+3</div>
+            <div class="sb-pod-controls">
+              <button class="sb-btn sb-minus" onclick="adjustSideBet('tt',-5)">−</button>
+              <span class="sb-pod-amount" id="sb-tt-amount">$0</span>
+              <button class="sb-btn sb-plus" onclick="adjustSideBet('tt',5)">+</button>
             </div>
             <div class="sb-result hidden" id="sb-tt-result"></div>
           </div>
-        </div>
 
-        <!-- ── BET POT ── -->
-        <div class="bet-pot-area">
-          <div class="pot-display" id="pot-display">
-            <div class="chip-tower-wrap">
-              <div class="chip-tower" id="pot-chips-visual"></div>
-            </div>
-            <div class="pot-label">BET</div>
-            <div class="pot-amount" id="pot-amount">$0</div>
-          </div>
-          <div class="balance-display">
-            <div class="bal-label">BALANCE</div>
-            <div class="bal-amount" id="bal-amount">$1,000</div>
-          </div>
-        </div>
-
-        <!-- ── CHIP TRAY ── -->
-        <div class="chip-tray" id="chip-tray">
-          <div class="chip chip-50"    data-val="50"    onclick="placeBet(50)">$50</div>
-          <div class="chip chip-100"   data-val="100"   onclick="placeBet(100)">$100</div>
-          <div class="chip chip-500"   data-val="500"   onclick="placeBet(500)">$500</div>
-          <div class="chip chip-1k"    data-val="1000"  onclick="placeBet(1000)">$1K</div>
-          <div class="chip chip-10k"   data-val="10000" onclick="placeBet(10000)">$10K</div>
-        </div>
-
-        <!-- ── BET UTILITY BUTTONS ── -->
-        <div class="bet-utils" id="bet-utils">
-          <button class="btn btn-clear"   id="btn-clear"   onclick="clearBet()"   disabled>✕ Clear</button>
-          <button class="btn btn-redo"    id="btn-redo"    onclick="redoBet()"    disabled>↺ Redo Bet</button>
-          <button class="btn btn-maxbet"  id="btn-maxbet"  onclick="maxBet()"     disabled>⚡ Max Bet</button>
-          <button class="btn btn-reset-bal" id="btn-reset-bal" onclick="confirmResetBalance()">↺ Reset $</button>
-        </div>
+        </div><!-- .betting-station -->
 
         <!-- ── ACTION CONTROLS ── -->
         <div class="controls" id="controls">
-          <button class="btn btn-deal"  id="btn-deal"   onclick="startGame()"     disabled>Deal</button>
-          <button class="btn btn-hit"   id="btn-hit"    onclick="playerHit()"     disabled>Hit <kbd>H</kbd></button>
-          <button class="btn btn-stand" id="btn-stand"  onclick="playerStand()"   disabled>Stand <kbd>S</kbd></button>
-          <button class="btn btn-dbl"   id="btn-dbl"    onclick="playerDouble()"  disabled>Double <kbd>D</kbd></button>
-          <button class="btn btn-split" id="btn-split"  onclick="playerSplit()"   disabled>Split <kbd>P</kbd></button>
-          <button class="btn btn-next"  id="btn-next"   onclick="nextHand()"      disabled>Next Hand →</button>
-          <button class="btn btn-new"   id="btn-new"    onclick="resetHand()"     disabled>New Hand</button>
+          <button class="btn btn-deal"  id="btn-deal"   onclick="startGame()"    data-always>Deal</button>
+          <button class="btn btn-hit"   id="btn-hit"    onclick="playerHit()"    data-phase="player">Hit <kbd>H</kbd></button>
+          <button class="btn btn-stand" id="btn-stand"  onclick="playerStand()"  data-phase="player">Stand <kbd>S</kbd></button>
+          <button class="btn btn-dbl"   id="btn-dbl"    onclick="playerDouble()" data-phase="player">Double <kbd>D</kbd></button>
+          <button class="btn btn-split" id="btn-split"  onclick="playerSplit()"  data-phase="player">Split <kbd>P</kbd></button>
+          <button class="btn btn-next"  id="btn-next"   onclick="nextHand()"     data-phase="split">Next →</button>
+          <button class="btn btn-new"   id="btn-new"    onclick="resetHand()"    data-phase="over">New Hand</button>
         </div>
 
         <!-- ── GAME LOG ── -->
@@ -229,7 +251,7 @@
         <div class="rule-item"><span class="rule-icon">🛡️</span><strong>Insurance</strong> when dealer shows Ace</div>
         <div class="rule-item"><span class="rule-icon">🤝</span><strong>Push</strong> returns your bet</div>
         <div class="rule-item"><span class="rule-icon">💎</span><strong>Perfect Pair</strong> Mixed 6:1 · Coloured 12:1 · Perfect 25:1</div>
-        <div class="rule-item"><span class="rule-icon">🎯</span><strong>21+3</strong> Flush 5:1 · Straight 10:1 · Three-of-a-kind 30:1 · Straight Flush 40:1 · Suited Trips 100:1</div>
+        <div class="rule-item"><span class="rule-icon">🎯</span><strong>21+3</strong> Flush 5:1 · Straight 10:1 · Three-of-a-kind 30:1 · SF 40:1 · Suited Trips 100:1</div>
       </div>
       <div class="keyboard-hint">
         <strong>Keyboard:</strong> H = Hit · S = Stand · D = Double · P = Split &nbsp;|&nbsp; 4-Deck Shoe

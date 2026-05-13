@@ -481,27 +481,32 @@ function refreshSbUI() {
    BETTING
    ═══════════════════════════════════════════════════════════════════ */
 function placeBet(amount) {
-  if (gamePhase!=='betting') return;
-  if (currentBet+amount+totalSideBet() > balance) { flashEl('bal-amount','flash-loss'); return; }
+  if (gamePhase !== 'betting') return;
+  if (currentBet + amount + totalSideBet() > balance) { flashEl('bal-amount','flash-loss'); return; }
   SFX.init(); SFX.chip();
-  currentBet+=amount; betChips.push(amount);
+  currentBet += amount; betChips.push(amount);
   updateBetDisplay(); addPotChipVis(amount);
 
-  const chip=document.querySelector(`.chip[data-val="${amount}"]`);
-  if (chip) {
+  // Animate the clicked chip and mark it as selected
+  const chips = document.querySelectorAll(`.chip[data-val="${amount}"]`);
+  chips.forEach(chip => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('chip-selected'));
+    chip.classList.add('chip-selected');
     chip.classList.remove('placing'); void chip.offsetWidth; chip.classList.add('placing');
-    chip.addEventListener('animationend',()=>chip.classList.remove('placing'),{once:true});
-  }
-  el.btnDeal.disabled=false;
+    chip.addEventListener('animationend', () => chip.classList.remove('placing'), {once:true});
+  });
+
+  setVisible(el.btnDeal, true);
   updateBetUtilBtns(); updateChipStates();
 }
 
 function clearBet() {
-  if (gamePhase!=='betting') return;
-  currentBet=0; betChips=[];
-  el.potChipsVis.innerHTML='';
+  if (gamePhase !== 'betting') return;
+  currentBet = 0; betChips = [];
+  el.potChipsVis.innerHTML = '';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('chip-selected'));
   updateBetDisplay();
-  el.btnDeal.disabled=true;
+  setVisible(el.btnDeal, false);
   updateBetUtilBtns(); updateChipStates();
 }
 
@@ -515,7 +520,7 @@ function redoBet() {
       currentBet+=amt; betChips.push(amt);
       addPotChipVis(amt); SFX.chip(); updateBetDisplay();
       if(i===previousBetChips.length-1){
-        el.btnDeal.disabled=false;
+        setVisible(el.btnDeal, true);
         updateBetUtilBtns(); updateChipStates();
         logEntry(`Redo bet: $${currentBet}`);
       }
@@ -541,7 +546,7 @@ function maxBet() {
       currentBet+=amt; betChips.push(amt);
       addPotChipVis(amt); SFX.chip(); updateBetDisplay();
       if(i===vis.length-1){
-        el.btnDeal.disabled=false;
+        setVisible(el.btnDeal, true);
         updateBetUtilBtns(); updateChipStates();
         logEntry(`Max bet: $${currentBet}`);
       }
@@ -577,8 +582,9 @@ function chipColour(amt) {
   if(amt>=10)  return 'pvc-10';  return 'pvc-5';
 }
 function addPotChipVis(amount) {
-  const d=document.createElement('div');
-  d.className=`pot-chip-vis ${chipColour(amount)}`;
+  const d = document.createElement('div');
+  d.className = `pot-chip-vis ${chipColour(amount)}`;
+  // Insert at the END so new chips appear on top (column-reverse layout)
   el.potChipsVis.appendChild(d);
 }
 
@@ -596,10 +602,17 @@ function updateChipStates() {
 }
 
 function updateBetUtilBtns() {
-  const betting=gamePhase==='betting';
-  el.btnRedo.disabled   = !betting||previousBet<=0||previousBet>balance-totalSideBet();
-  el.btnMaxbet.disabled = !betting||balance<=0;
-  el.btnClear.disabled  = !betting||currentBet<=0;
+  const betting = gamePhase === 'betting';
+  const canRedo  = betting && previousBet > 0 && previousBet <= balance - totalSideBet();
+  const canMax   = betting && balance > 0;
+  const hasBet   = betting && currentBet > 0;
+
+  setVisible(el.btnRedo,   canRedo);
+  setVisible(el.btnMaxbet, canMax);
+  setVisible(el.btnClear,  hasBet);
+  // Reset-balance btn is always visible (low-opacity handled by CSS)
+  const resetBtn = document.getElementById('btn-reset-bal');
+  if (resetBtn) resetBtn.classList.add('btn-visible');
 }
 
 /* ── Payout ──────────────────────────────────────────────────── */
@@ -883,14 +896,20 @@ function endRound(results) {
     });
   });
 
-  const potChips=el.potChipsVis.querySelectorAll('.pot-chip-vis');
-  const isWin=results.some(r=>r.outcome==='win'||r.outcome==='blackjack');
-  potChips.forEach((c,i)=>{
-    c.style.transition=`transform .4s ${i*50}ms, opacity .4s ${i*50}ms`;
-    c.style.transform=isWin?'translateY(-20px) scale(1.4)':'translateY(10px) scale(.5)';
-    c.style.opacity='0';
+  const potChips = el.potChipsVis.querySelectorAll('.pot-chip-vis');
+  const isWin = results.some(r => r.outcome==='win' || r.outcome==='blackjack');
+  potChips.forEach((c, i) => {
+    const delay = i * 40;
+    c.style.transition = `transform .4s ${delay}ms cubic-bezier(.34,1.56,.64,1), opacity .35s ${delay}ms ease`;
+    if (isWin) {
+      c.style.transform = 'translateY(-18px) scale(1.35)';
+      c.style.filter    = 'brightness(1.6)';
+    } else {
+      c.style.transform = 'translateY(8px) scale(.55)';
+    }
+    c.style.opacity = '0';
   });
-  setTimeout(()=>el.potChipsVis.innerHTML='',600);
+  setTimeout(() => { el.potChipsVis.innerHTML = ''; }, 650);
 
   updateBetDisplay(); updateStatsDisplay();
   updateLeaderboard();  // persist updated stats to leaderboard
@@ -942,22 +961,38 @@ function setPlayerControls() {
 }
 
 function setControls({deal,hit,stand,dbl,split,next,newGame}) {
-  el.btnDeal.disabled  = !deal;
-  el.btnHit.disabled   = !hit;
-  el.btnStand.disabled = !stand;
-  el.btnDbl.disabled   = !dbl;
-  el.btnSplit.disabled = !split;
-  el.btnNext.disabled  = !next;
-  el.btnNew.disabled   = !newGame;
+  // Show/hide action buttons with CSS transition
+  setVisible(el.btnDeal,  deal);
+  setVisible(el.btnHit,   hit);
+  setVisible(el.btnStand, stand);
+  setVisible(el.btnDbl,   dbl);
+  setVisible(el.btnSplit, split);
+  setVisible(el.btnNext,  next);
+  setVisible(el.btnNew,   newGame);
   updateBetUtilBtns();
 }
 
-function lockBettingUI(lock) {
-  if(lock){
-    document.querySelectorAll('.chip').forEach(c=>c.classList.add('chip-off'));
-    el.btnClear.disabled=el.btnRedo.disabled=el.btnMaxbet.disabled=true;
+/* Show/hide any .btn or .util-btn smoothly */
+function setVisible(el, visible) {
+  if (!el) return;
+  if (visible) {
+    el.classList.add('btn-visible');
+    el.disabled = false;
   } else {
-    updateChipStates(); updateBetUtilBtns();
+    el.classList.remove('btn-visible');
+    el.disabled = true;
+  }
+}
+
+function lockBettingUI(lock) {
+  if (lock) {
+    document.querySelectorAll('.chip[data-val]').forEach(c => c.classList.add('chip-off'));
+    setVisible(el.btnClear,  false);
+    setVisible(el.btnRedo,   false);
+    setVisible(el.btnMaxbet, false);
+  } else {
+    updateChipStates();
+    updateBetUtilBtns();
   }
 }
 
@@ -1240,8 +1275,18 @@ function init() {
   attachUI();
   initParticles();
 
+  // Initialise all control buttons as hidden; then show Deal if balance > 0
+  document.querySelectorAll('.btn').forEach(b => b.classList.remove('btn-visible'));
+  document.querySelectorAll('.util-btn').forEach(b => b.classList.remove('btn-visible'));
+  // Always show reset-balance
+  const resetBtn = document.getElementById('btn-reset-bal');
+  if (resetBtn) resetBtn.classList.add('btn-visible');
+  // Show Deal if we have balance
+  if (balance > 0) setVisible(el.btnDeal, false); // deal needs a bet first
+  updateBetUtilBtns(); // show redo/max if applicable
+
   // Show name prompt only for first-time players
-  if(!playerName){
+  if (!playerName) {
     el.nameModal.classList.remove('hidden');
   } else {
     el.nameModal.classList.add('hidden');
