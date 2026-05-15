@@ -974,6 +974,29 @@ body {
 /* Insurance buttons are always visible */
 .btn-ins-yes, .btn-ins-no { opacity:1; pointer-events:all; max-width:none; transform:none; }
 
+/* ─────────────────────────────────────────────────────────
+   Modal / session buttons — always visible
+   These buttons live inside modals and must NOT inherit the
+   fade-in animation system used by the in-game action bar.
+   ───────────────────────────────────────────────────────── */
+.name-modal-btns .btn,
+#name-modal-session-options .btn,
+.btn.modal-btn {
+  opacity: 1;
+  pointer-events: auto;
+  max-width: none;
+  padding-left: 20px;
+  padding-right: 20px;
+  transform: none;
+}
+
+/* Keep the session-option buttons a touch smaller, matching
+   the inline styles already in the HTML, but never collapsed. */
+#name-modal-session-options .btn {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
 /* ── Game Log ─────────────────────────────────────────── */
 .game-log {
   background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.05); border-radius:10px;
@@ -1133,6 +1156,17 @@ body {
   .btn kbd { display:none; }
   .btn-deal { padding:9px 20px; font-size:.82rem; }
   .btn-deal.btn-visible { padding-left:20px; padding-right:20px; }
+
+  /* Mobile: re-assert modal-button visibility so the .btn clamps above don't shrink them */
+  .name-modal-btns .btn,
+  #name-modal-session-options .btn,
+  .btn.modal-btn {
+    max-width: none;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .name-modal-btns { flex-wrap: wrap; }
+  .name-confirm-btn { min-width: 0; }
 
   .pot-amount { font-size:.9rem; }
   .bal-amount { font-size:.82rem; }
