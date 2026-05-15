@@ -69,6 +69,7 @@
         </div>
       </div>
       <div class="hud-right">
+        <button class="icon-btn" id="btn-change-player" title="Change Player" aria-label="Change Player">👤</button>
         <button class="icon-btn" id="btn-mute" title="Toggle Sound" aria-label="Mute">🔊</button>
         <button class="icon-btn" id="btn-lb"   title="Leaderboard" aria-label="Leaderboard">🏆</button>
         <button class="icon-btn" id="btn-rules" title="Rules" aria-label="Rules">?</button>
@@ -272,7 +273,7 @@
         <div class="rule-item"><span class="rule-icon">🎯</span><strong>21+3</strong> Flush 5:1 · Straight 10:1 · Three-of-a-kind 30:1 · SF 40:1 · Suited Trips 100:1</div>
       </div>
       <div class="keyboard-hint">
-        <strong>Keyboard:</strong> H = Hit · S = Stand · D = Double · P = Split &nbsp;|&nbsp; 4-Deck Shoe
+        <strong>Keyboard:</strong> H = Hit · S = Stand · D = Double · P = Split &nbsp;|&nbsp; 2-Deck Shoe
       </div>
     </div>
   </div>
@@ -280,12 +281,20 @@
   <!-- Player Name Modal -->
   <div class="modal-overlay" id="name-modal">
     <div class="modal-box name-modal-box">
-      <h2 class="modal-title">Welcome to Royal Blackjack</h2>
-      <p class="name-modal-sub">Enter your name to track your progress on the leaderboard.</p>
+      <h2 class="modal-title" id="name-modal-title">Welcome to Royal Blackjack</h2>
+      <p class="name-modal-sub" id="name-modal-sub">Enter your name to track your progress on the leaderboard.</p>
       <input class="name-input" id="player-name-input" type="text" maxlength="20" placeholder="Your name…" autocomplete="off" spellcheck="false">
       <div class="name-modal-btns">
         <button class="btn btn-deal name-confirm-btn" id="btn-name-confirm">Let's Play ♠</button>
         <button class="btn btn-new" id="btn-name-skip">Skip</button>
+      </div>
+      <!-- Only shown when changing players (not on first load) -->
+      <div id="name-modal-session-options" style="display:none; margin-top:14px; border-top:1px solid rgba(255,255,255,0.15); padding-top:14px;">
+        <p style="color:#f0c96a; font-size:0.8rem; margin:0 0 10px; text-align:center;">Session options for the new player:</p>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+          <button class="btn btn-new" id="btn-keep-session" style="font-size:0.78rem; padding:6px 14px;">Keep current balance &amp; stats</button>
+          <button class="btn btn-reset-bal" id="btn-fresh-session" style="font-size:0.78rem; padding:6px 14px;">Start fresh ($1,000)</button>
+        </div>
       </div>
     </div>
   </div>

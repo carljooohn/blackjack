@@ -161,6 +161,10 @@ body {
 .icon-btn:hover { background:var(--gold-dim); border-color:rgba(201,168,76,.4); transform:scale(1.08); }
 .icon-btn:active { transform:scale(.9); }
 
+/* Change-player button: subtle gold accent so it's easy to find */
+#btn-change-player { border-color:rgba(201,168,76,.3); }
+#btn-change-player:hover { background:rgba(201,168,76,.25); border-color:rgba(201,168,76,.7); }
+
 /* ═══════════════════════════════════════════════════════
    CASINO TABLE
    ═══════════════════════════════════════════════════════ */

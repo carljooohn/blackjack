@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    ROYAL BLACKJACK — Complete Game Engine v3
-   New:  4-deck shoe · Persistent balance (exact) · Leaderboard ·
+   New:  2-deck shoe · Persistent balance (exact) · Leaderboard ·
          Perfect Pair & 21+3 side bets · Player name
    Kept: Hit · Stand · Double · Split · Insurance · Soft Aces ·
          Redo Bet · Max Bet · Animations · Sound stubs · Keyboard
@@ -14,8 +14,8 @@
 const SUITS        = ['♠','♥','♦','♣'];
 const RANKS        = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const RED_SUITS    = new Set(['♥','♦']);
-const NUM_DECKS    = 4;          // 4-deck shoe
-const RESHUFFLE_AT = 52;         // reshuffle when fewer than 1 deck remains
+const NUM_DECKS    = 2;          // 2-deck shoe (change this to scale the game)
+const RESHUFFLE_AT = 26;         // reshuffle when fewer than half a deck remains
 const STARTING_BAL = 1000;
 const MIN_BET      = 5;
 const SB_STEP      = 5;          // side-bet increment
@@ -136,6 +136,12 @@ const el = {
   btnNameSkip:    $('btn-name-skip'),
   lbModal:        $('lb-modal'),
   lbModalClose:   $('lb-modal-close'),
+  btnChangePlayer:$('btn-change-player'),
+  nameModalTitle: $('name-modal-title'),
+  nameModalSub:   $('name-modal-sub'),
+  nameModalSessionOptions: $('name-modal-session-options'),
+  btnKeepSession: $('btn-keep-session'),
+  btnFreshSession:$('btn-fresh-session'),
   lbTbody:        $('lb-tbody'),
   btnLbClear:     $('btn-lb-clear'),
   sbPpAmount:     $('sb-pp-amount'),
@@ -152,7 +158,7 @@ const el = {
    ═══════════════════════════════════════════════════════════════════ */
 function runLoadingScreen() {
   const steps = [
-    { pct:30,  label:'Shuffling 4 decks…',    delay:0    },
+    { pct:30,  label:`Shuffling ${NUM_DECKS} decks…`,    delay:0    },
     { pct:60,  label:'Polishing the chips…',  delay:400  },
     { pct:85,  label:'Dimming the lights…',   delay:800  },
     { pct:100, label:'Welcome to the table!', delay:1200 },
@@ -201,7 +207,7 @@ function initParticles() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   4-DECK SHOE
+   CARD SHOE
    ═══════════════════════════════════════════════════════════════════ */
 function buildShoe() {
   const cards = [];
@@ -226,7 +232,7 @@ function reshuffleShoe() {
   shoe = buildShoe();
   showShuffleAnim();
   SFX.shuffle();
-  logEntry(`♠ 4-deck shoe reshuffled (${NUM_DECKS*52} cards).`);
+  logEntry(`♠ ${NUM_DECKS}-deck shoe reshuffled (${NUM_DECKS*52} cards).`);
   updateDeckLabel();
 }
 
@@ -375,7 +381,7 @@ function evalPerfectPair(hand) {
  *   Straight      (sequential ranks, any suit)       → 10:1
  *   Three of a Kind (same rank, diff suits)          → 30:1
  *   Straight Flush (sequential, same suit)           → 40:1
- *   Suited Trips   (same rank, same suit — 4-deck possible!) → 100:1
+ *   Suited Trips   (same rank, same suit — multi-deck possible!) → 100:1
  */
 function eval21plus3(playerHand, dealerUpCard) {
   if (!dealerUpCard || playerHand.length<2) return null;
@@ -1226,7 +1232,7 @@ function launchConfetti() {
 
 function showShuffleAnim() {
   const o=document.createElement('div'); o.className='shuffle-overlay';
-  o.innerHTML='<div class="shuffle-text">♠ SHUFFLING 4 DECKS ♠</div>';
+  o.innerHTML=`<div class="shuffle-text">♠ SHUFFLING ${NUM_DECKS} DECKS ♠</div>`;
   document.body.appendChild(o);
   o.addEventListener('animationend',()=>o.remove());
 }
@@ -1294,21 +1300,108 @@ function attachUI() {
     saveLB([]); renderLeaderboard();
   });
 
-  // Player name modal
-  const confirmName=()=>{
-    const raw=el.nameInput.value.trim();
-    playerName=raw?raw.slice(0,20):'Anonymous';
-    localStorage.setItem(SK.playerName,playerName);
+  // ── Player name modal ──────────────────────────────────────────────
+  //
+  // `changePlayerMode` is true when the user clicked the 👤 button
+  // (i.e. they want to switch players), false on first-time load.
+  // We use it to show/hide the "keep vs fresh session" options and to
+  // update the modal title & subtitle so it's clear what's happening.
+  //
+  let changePlayerMode = false;
+
+  // Pending session choice when switching players:
+  //   'keep'  – carry the current balance/stats over to the new name
+  //   'fresh' – wipe balance & stats and start at $1,000
+  //   null    – not yet chosen (default: keep, decided when confirming)
+  let pendingSessionChoice = null;
+
+  // Opens the name modal in either "welcome" or "change player" mode.
+  function openNameModal(isChange) {
+    changePlayerMode = isChange;
+    pendingSessionChoice = null;
+
+    if (isChange) {
+      el.nameModalTitle.textContent = 'Change Player';
+      el.nameModalSub.textContent   = 'Enter the new player\'s name.';
+      el.btnNameSkip.textContent    = 'Cancel';
+      el.nameModalSessionOptions.style.display = 'block';
+      el.nameInput.value = '';          // always blank so the new name must be typed
+    } else {
+      el.nameModalTitle.textContent = 'Welcome to Royal Blackjack';
+      el.nameModalSub.textContent   = 'Enter your name to track your progress on the leaderboard.';
+      el.btnNameSkip.textContent    = 'Skip';
+      el.nameModalSessionOptions.style.display = 'none';
+    }
+
+    el.nameModal.classList.remove('hidden');
+    // Autofocus the input after the modal is visible
+    setTimeout(() => el.nameInput.focus(), 50);
+  }
+
+  // Applies the name + session choice, then closes the modal.
+  function confirmName() {
+    const raw = el.nameInput.value.trim();
+
+    if (changePlayerMode) {
+      // A real name is required when switching — warn if blank
+      if (!raw) {
+        el.nameInput.focus();
+        el.nameInput.style.outline = '2px solid #ff4444';
+        setTimeout(() => el.nameInput.style.outline = '', 1500);
+        return;
+      }
+
+      // Save the outgoing player's leaderboard entry before switching
+      updateLeaderboard();
+
+      // Apply the chosen session reset (default: keep)
+      if (pendingSessionChoice === 'fresh') {
+        // Wipe session data for this new player
+        balance = STARTING_BAL;
+        stats   = { wins:0, losses:0, pushes:0, bj:0, totalProfit:0,
+                    bestWin:0, streak:0, bestStreak:0 };
+        previousBet      = 0;
+        previousBetChips = [];
+        saveState();
+      }
+    }
+
+    playerName = raw ? raw.slice(0, 20) : 'Anonymous';
+    localStorage.setItem(SK.playerName, playerName);
     el.nameModal.classList.add('hidden');
     updateLeaderboard();
-    logEntry(`Welcome, ${playerName}!`);
-  };
-  el.btnNameConfirm.addEventListener('click',confirmName);
-  el.btnNameSkip.addEventListener('click',()=>{
-    playerName=playerName||'Anonymous';
+    updateStatsDisplay();
+    logEntry(`Welcome${changePlayerMode ? '' : ' back'}, ${playerName}!${
+      !changePlayerMode ? ` Balance: $${balance.toLocaleString()}` : ''}`);
+  }
+
+  // Highlight the active session-choice button
+  function setSessionChoice(choice) {
+    pendingSessionChoice = choice;
+    el.btnKeepSession.style.opacity  = choice === 'keep'  ? '1' : '0.5';
+    el.btnFreshSession.style.opacity = choice === 'fresh' ? '1' : '0.5';
+  }
+
+  el.btnNameConfirm.addEventListener('click', confirmName);
+
+  el.btnNameSkip.addEventListener('click', () => {
+    if (changePlayerMode) {
+      // "Cancel" — just close without changing anything
+      el.nameModal.classList.add('hidden');
+      return;
+    }
+    // First-load skip
+    playerName = playerName || 'Anonymous';
     el.nameModal.classList.add('hidden');
   });
-  el.nameInput.addEventListener('keydown',e=>{if(e.key==='Enter')confirmName();});
+
+  el.nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') confirmName(); });
+
+  el.btnKeepSession.addEventListener('click',  () => setSessionChoice('keep'));
+  el.btnFreshSession.addEventListener('click', () => setSessionChoice('fresh'));
+
+  // 👤 Change Player button in the header
+  el.btnChangePlayer.addEventListener('click', () => openNameModal(true));
 
   // Reset balance (called by HTML onclick on btn-reset-bal)
   // function is already global: confirmResetBalance()
@@ -1323,7 +1416,7 @@ function nextHand(){}
 function init() {
   loadState();          // restore exact balance, stats, prev bet, name
 
-  shoe=buildShoe();     // 4-deck shoe (208 cards)
+  shoe=buildShoe();     // build shoe (NUM_DECKS × 52 cards)
   updateDeckLabel();
   updateBetDisplay();
   updateStatsDisplay();
@@ -1348,7 +1441,7 @@ function init() {
 
   // Show name prompt only for first-time players
   if (!playerName) {
-    el.nameModal.classList.remove('hidden');
+    openNameModal(false);
   } else {
     el.nameModal.classList.add('hidden');
     logEntry(`Welcome back, ${playerName}! Balance: $${balance.toLocaleString()}`);
